@@ -1,0 +1,186 @@
+---
+alwaysApply: true
+---
+
+## DTU Support BE — Project Overview & Cursor Rules
+
+### Communication & Coding
+- **Giao tiếp**: mọi báo cáo, câu hỏi mở đầu bằng "Hi boss Trong" (Tiếng Việt).
+- **Discovery trước khi sửa/viết**: BẮT BUỘC dùng tools để đọc code liên quan: `read_file`, `codebase_search`, `grep`.
+- **Code**: viết bằng tiếng Anh, rõ ràng, không comment thừa. 2-spaces indentation.
+
+### Project Overview
+- **Project**: DTU Support BE (Rails API) cho DTU Student Helper
+- **Purpose**: Cung cấp API cho tính điểm, dự đoán xếp loại bằng, marketplace tài liệu
+- **App mode**: API-only (`ActionController::API`)
+- **Deployment**: Docker image, Thruster + Puma, Kamal
+
+### Tech Stack
+- **Ruby**: 3.3.9 (Dockerfile)
+- **Rails**: 8.0.2 (pinned version)
+- **Database**: PostgreSQL (configured via Rails credentials)
+- **Gems**: `pg 1.6.2`, `jsonapi-serializer 2.2`, `puma`, `solid_queue`, `solid_cache`, `solid_cable`
+- **Security/Prod**: `force_ssl`, `assume_ssl` (production)
+- **CORS**: initializer có sẵn, mặc định tắt (comment)
+- **Bundle**: installed to `vendor/bundle` (ignored in git)
+
+### Code Organization
+- Controllers mỏng, ủy quyền business cho Services.
+- Services đặt dưới `app/services/...` theo domain rõ ràng.
+- Jobs đặt dưới `app/jobs/...` cho tác vụ nền.
+- Serializers/Presenters (nếu dùng) đặt dưới `app/serializers/...`.
+- Tránh lệ thuộc chéo; tách lớp theo trách nhiệm.
+
+### Routing
+- Khai báo routes trong `config/routes.rb` theo chuẩn REST.
+- Đặt prefix/namespace theo module khi cần, không bắt buộc `v1/`.
+
+### Controllers & Services
+- Controllers mỏng, ủy quyền business cho Service Objects.
+- Services: input rõ ràng, trả về result (hoặc raise exception domain). Tránh logic lớn trong controller.
+- Không triển khai API tính điểm/bằng ở BE (được xử lý trên FE).
+
+### Background Jobs
+- Dùng `solid_queue` cho tác vụ nặng/ngoài luồng.
+- Thiết kế idempotent, retry hợp lý, log tiến độ và batch size phù hợp.
+
+### Error Handling & Responses
+- **Renderable Concern**: `app/controllers/concerns/renderable.rb`
+  - `render_success(data:, status:)` → `{ data: ... }`
+  - `render_error(message:, details:, status:)` → `{ errors: [{ message:, details: }] }`
+  - `render_errors(messages:, status:)` → `{ errors: [{ message: ... }] }`
+- **ApplicationController**: includes Renderable + rescue_from handlers
+  - `ActiveRecord::RecordNotFound` → 404
+  - `ActionController::ParameterMissing` → 400
+  - `ActiveRecord::RecordInvalid` → 422
+- **Serialization**: `jsonapi-serializer 2.2` for consistent JSON responses
+
+### Security Rules
+- Bắt buộc xác thực và phân quyền (project-level, row-level nếu áp dụng) ở `v1`.
+- Ẩn tham số nhạy cảm trong logs (`filter_parameter_logging`).
+- CORS chỉ bật origin cần thiết; không dùng `*` ở production.
+- Giữ `force_ssl` ở production.
+
+### Performance Rules
+- Tránh N+1 (preload/includes ở service layer).
+- Pagination/streaming cho dataset lớn; batch size hợp lý.
+- Jobs không vượt quá ngưỡng đồng thời đã định; theo dõi memory.
+
+### Testing Requirements
+- Mỗi endpoint/service/job mới phải có test.
+- Bảo mật: kiểm tra AuthN/AuthZ và scope truy cập.
+- Performance cơ bản: pagination, batch, tránh N+1.
+- Contract test: xác nhận schema JSON và mã lỗi.
+
+### Documentation Requirements
+- Cho mỗi endpoint: method, path, params, sample request/response, error cases.
+- Ghi rõ phần tái sử dụng từ legacy và cải tiến.
+
+### Change Workflow (bắt buộc)
+1) Discovery: dùng tools đọc file liên quan, ghi lại các đường dẫn được kiểm tra.
+2) Proposal: liệt kê files sẽ thêm/sửa trong `v1/`, mô tả design ngắn.
+3) Implementation: viết code + tests, tuân thủ cấu trúc trên.
+4) Self-review: Security, Performance, Tests pass.
+5) Hỏi xác nhận nếu thay đổi kiến trúc (ví dụ chuyển DB).
+
+### Database Configuration
+- **Credentials**: `bin/rails credentials:edit` để cấu hình PostgreSQL
+- **Fallbacks**: localhost:5432, postgres user, default database names
+
+### Quick Checklists for PR
+- [ ] Đã chạy discovery bằng tools và dẫn chứng file liên quan.
+- [ ] Controller mỏng, business trong service, dùng Renderable concern.
+- [ ] Có tests: security, performance cơ bản, contract JSON.
+- [ ] Serialization với jsonapi-serializer khi cần.
+- [ ] Cấu hình CORS/SSL/Solid phù hợp môi trường.
+## DTU Support BE — Project Overview & Cursor Rules
+
+### Communication & Coding
+- **Giao tiếp**: mọi báo cáo, câu hỏi mở đầu bằng "Hi boss Trong" (Tiếng Việt).
+- **Discovery trước khi sửa/viết**: BẮT BUỘC dùng tools để đọc code liên quan: `read_file`, `codebase_search`, `grep`.
+- **Code**: viết bằng tiếng Anh, rõ ràng, không comment thừa. 2-spaces indentation.
+
+### Project Overview
+- **Project**: DTU Support BE (Rails API) cho DTU Student Helper
+- **Purpose**: Cung cấp API cho tính điểm, dự đoán xếp loại bằng, marketplace tài liệu
+- **App mode**: API-only (`ActionController::API`)
+- **Deployment**: Docker image, Thruster + Puma, Kamal
+
+### Tech Stack
+- **Ruby**: 3.3.9 (Dockerfile)
+- **Rails**: 8.0.2 (pinned version)
+- **Database**: PostgreSQL (configured via Rails credentials)
+- **Gems**: `pg 1.6.2`, `jsonapi-serializer 2.2`, `puma`, `solid_queue`, `solid_cache`, `solid_cable`
+- **Security/Prod**: `force_ssl`, `assume_ssl` (production)
+- **CORS**: initializer có sẵn, mặc định tắt (comment)
+- **Bundle**: installed to `vendor/bundle` (ignored in git)
+
+### Code Organization
+- Controllers mỏng, ủy quyền business cho Services.
+- Services đặt dưới `app/services/...` theo domain rõ ràng.
+- Jobs đặt dưới `app/jobs/...` cho tác vụ nền.
+- Serializers/Presenters (nếu dùng) đặt dưới `app/serializers/...`.
+- Tránh lệ thuộc chéo; tách lớp theo trách nhiệm.
+
+### Routing
+- Khai báo routes trong `config/routes.rb` theo chuẩn REST.
+- Đặt prefix/namespace theo module khi cần, không bắt buộc `v1/`.
+
+### Controllers & Services
+- Controllers mỏng, ủy quyền business cho Service Objects.
+- Services: input rõ ràng, trả về result (hoặc raise exception domain). Tránh logic lớn trong controller.
+- Không triển khai API tính điểm/bằng ở BE (được xử lý trên FE).
+
+### Background Jobs
+- Dùng `solid_queue` cho tác vụ nặng/ngoài luồng.
+- Thiết kế idempotent, retry hợp lý, log tiến độ và batch size phù hợp.
+
+### Error Handling & Responses
+- **Renderable Concern**: `app/controllers/concerns/renderable.rb`
+  - `render_success(data:, status:)` → `{ data: ... }`
+  - `render_error(message:, details:, status:)` → `{ errors: [{ message:, details: }] }`
+  - `render_errors(messages:, status:)` → `{ errors: [{ message: ... }] }`
+- **ApplicationController**: includes Renderable + rescue_from handlers
+  - `ActiveRecord::RecordNotFound` → 404
+  - `ActionController::ParameterMissing` → 400
+  - `ActiveRecord::RecordInvalid` → 422
+- **Serialization**: `jsonapi-serializer 2.2` for consistent JSON responses
+
+### Security Rules
+- Bắt buộc xác thực và phân quyền (project-level, row-level nếu áp dụng) ở `v1`.
+- Ẩn tham số nhạy cảm trong logs (`filter_parameter_logging`).
+- CORS chỉ bật origin cần thiết; không dùng `*` ở production.
+- Giữ `force_ssl` ở production.
+
+### Performance Rules
+- Tránh N+1 (preload/includes ở service layer).
+- Pagination/streaming cho dataset lớn; batch size hợp lý.
+- Jobs không vượt quá ngưỡng đồng thời đã định; theo dõi memory.
+
+### Testing Requirements
+- Mỗi endpoint/service/job mới phải có test.
+- Bảo mật: kiểm tra AuthN/AuthZ và scope truy cập.
+- Performance cơ bản: pagination, batch, tránh N+1.
+- Contract test: xác nhận schema JSON và mã lỗi.
+
+### Documentation Requirements
+- Cho mỗi endpoint: method, path, params, sample request/response, error cases.
+- Ghi rõ phần tái sử dụng từ legacy và cải tiến.
+
+### Change Workflow (bắt buộc)
+1) Discovery: dùng tools đọc file liên quan, ghi lại các đường dẫn được kiểm tra.
+2) Proposal: liệt kê files sẽ thêm/sửa trong `v1/`, mô tả design ngắn.
+3) Implementation: viết code + tests, tuân thủ cấu trúc trên.
+4) Self-review: Security, Performance, Tests pass.
+5) Hỏi xác nhận nếu thay đổi kiến trúc (ví dụ chuyển DB).
+
+### Database Configuration
+- **Credentials**: `bin/rails credentials:edit` để cấu hình PostgreSQL
+- **Fallbacks**: localhost:5432, postgres user, default database names
+
+### Quick Checklists for PR
+- [ ] Đã chạy discovery bằng tools và dẫn chứng file liên quan.
+- [ ] Controller mỏng, business trong service, dùng Renderable concern.
+- [ ] Có tests: security, performance cơ bản, contract JSON.
+- [ ] Serialization với jsonapi-serializer khi cần.
+- [ ] Cấu hình CORS/SSL/Solid phù hợp môi trường.
