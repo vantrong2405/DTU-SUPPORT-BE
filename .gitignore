@@ -32,3 +32,6 @@ vendor/
 
 # Ignore master key for decrypting credentials and more.
 /config/master.key
+
+# Ignore secrets.yml (contains sensitive credentials)
+/config/secrets.yml

@@ -11,6 +11,7 @@ gem "bootsnap", require: false
 gem "kamal", require: false
 gem "thruster", require: false
 gem "dotenv-rails"
+gem 'faraday', '2.14'
 group :development, :test do
   gem "debug", platforms: %i[ mri windows ], require: "debug/prelude"
   gem "brakeman", require: false
