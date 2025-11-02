@@ -8,8 +8,9 @@ alwaysApply: true
 
 ## Core Architecture
 - **Rails 8.0.2** API-only application
-- **PostgreSQL** database (configured via Rails credentials)
+- **Supabase (PostgreSQL)** database - configured via .env file
 - **Docker** deployment with Kamal + Thruster
+- **Environment Configuration**: All config loaded from `.env` file (dotenv-rails)
 
 ## Recommended Folder Structure for Rails API
 
@@ -141,8 +142,24 @@ db/
 - Errors: `{ errors: [{ message: "...", details: "..." }] }`
 - HTTP status codes: 200, 400, 401, 403, 404, 422, 500
 
-## Database Credentials
-Configure via `bin/rails credentials:edit`:
-- `db.host`, `db.port`, `db.username`, `db.password`
-- `db.database_development`, `db.database_test`, `db.database_production`
-- `db.database_cache`, `db.database_queue`, `db.database_cable`
+## Database Configuration
+All configuration loaded from `.env` file (see `.env.example` for template):
+
+### Supabase Database Connection
+- `SUPABASE_DB_HOST` - Supabase database host (e.g., `db.xxxxx.supabase.co`)
+- `SUPABASE_DB_PORT` - Database port (default: `5432`)
+- `SUPABASE_DB_USERNAME` - Database username (default: `postgres`)
+- `SUPABASE_DB_PASSWORD` - Database password
+- `SUPABASE_DB_NAME` - Database name (default: `postgres`)
+- `SUPABASE_DB_NAME_TEST` - Test database name
+- `SUPABASE_DB_NAME_CACHE`, `SUPABASE_DB_NAME_QUEUE`, `SUPABASE_DB_NAME_CABLE` - Solid gems databases
+
+### Supabase API Configuration
+- `SUPABASE_URL` - Supabase project URL (e.g., `https://xxxxx.supabase.co`)
+- `SUPABASE_ANON_KEY` - Anonymous/public API key (for client-side operations with RLS)
+- `SUPABASE_SERVICE_ROLE_KEY` - Service role key (for admin/background operations, bypasses RLS)
+
+### Supabase Client Usage
+- `Supabase::AnonClient` - For operations that respect Row-Level Security (RLS)
+- `Supabase::ServiceClient` - For admin operations that bypass RLS (use carefully)
+- Both available in `Services::BaseService` via `supabase_client(use_service_role: false/true)`

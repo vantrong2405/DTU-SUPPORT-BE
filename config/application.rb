@@ -28,5 +28,12 @@ module DtuSupportBe
     # Middleware like session, flash, cookies can be added back manually.
     # Skip views, helpers and assets when generating a new resource.
     config.api_only = true
+
+    config.secrets = ActiveSupport::OrderedOptions.new
+    secrets_file = Rails.root.join("config", "secrets.yml")
+    if secrets_file.exist?
+      secrets = YAML.load(ERB.new(secrets_file.read).result, aliases: true)[Rails.env]
+      config.secrets.merge!(secrets.deep_symbolize_keys) if secrets
+    end
   end
 end

@@ -7,22 +7,22 @@
 default: &default
   adapter: postgresql
   encoding: unicode
-  pool: <%= ENV.fetch("RAILS_MAX_THREADS") { 5 } %>
-  host: <%= Rails.application.credentials.dig(:db, :host) || "localhost" %>
-  port: <%= Rails.application.credentials.dig(:db, :port) || 5432 %>
-  username: <%= Rails.application.credentials.dig(:db, :username) || "postgres" %>
-  password: <%= Rails.application.credentials.dig(:db, :password) %>
+  pool: <%= ENV.fetch("RAILS_MAX_THREADS") %>
+  host: <%= ENV.fetch("SUPABASE_DB_HOST") %>
+  port: <%= ENV.fetch("SUPABASE_DB_PORT") %>
+  username: <%= ENV.fetch("SUPABASE_DB_USERNAME") %>
+  password: <%= ENV.fetch("SUPABASE_DB_PASSWORD") %>
 
 development:
   <<: *default
-  database: <%= Rails.application.credentials.dig(:db, :database_development) || "dtu_support_be_development" %>
+  database: <%= ENV.fetch("SUPABASE_DB_NAME") %>
 
 # Warning: The database defined as "test" will be erased and
 # re-generated from your development database when you run "rake".
 # Do not set this db to the same as development or production.
 test:
   <<: *default
-  database: <%= Rails.application.credentials.dig(:db, :database_test) || "dtu_support_be_test" %>
+  database: <%= ENV.fetch("SUPABASE_DB_NAME_TEST") %>
 
 
 # Store production database in the storage/ directory, which by default
@@ -30,16 +30,16 @@ test:
 production:
   primary:
     <<: *default
-    database: <%= Rails.application.credentials.dig(:db, :database_production) || "dtu_support_be_production" %>
+    database: <%= ENV.fetch("SUPABASE_DB_NAME") %>
   cache:
     <<: *default
-    database: <%= Rails.application.credentials.dig(:db, :database_cache) || "dtu_support_be_production_cache" %>
+    database: <%= ENV.fetch("SUPABASE_DB_NAME_CACHE") %>
     migrations_paths: db/cache_migrate
   queue:
     <<: *default
-    database: <%= Rails.application.credentials.dig(:db, :database_queue) || "dtu_support_be_production_queue" %>
+    database: <%= ENV.fetch("SUPABASE_DB_NAME_QUEUE") %>
     migrations_paths: db/queue_migrate
   cable:
     <<: *default
-    database: <%= Rails.application.credentials.dig(:db, :database_cable) || "dtu_support_be_production_cable" %>
+    database: <%= ENV.fetch("SUPABASE_DB_NAME_CABLE") %>
     migrations_paths: db/cable_migrate
