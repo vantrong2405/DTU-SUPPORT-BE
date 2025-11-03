@@ -1,45 +1,33 @@
-# SQLite. Versions 3.8.0 and up are supported.
-#   gem install sqlite3
-#
-#   Ensure the SQLite 3 gem is defined in your Gemfile
-#   gem "sqlite3"
-#
 default: &default
   adapter: postgresql
   encoding: unicode
   pool: <%= ENV.fetch("RAILS_MAX_THREADS") %>
-  host: <%= ENV.fetch("SUPABASE_DB_HOST") %>
-  port: <%= ENV.fetch("SUPABASE_DB_PORT") %>
-  username: <%= ENV.fetch("SUPABASE_DB_USERNAME") %>
-  password: <%= ENV.fetch("SUPABASE_DB_PASSWORD") %>
+  host: <%= ENV.fetch("DB_HOST") %>
+  port: <%= ENV.fetch("DB_PORT") %>
+  username: <%= ENV.fetch("DB_USERNAME") %>
+  password: <%= ENV.fetch("DB_PASSWORD") %>
 
 development:
   <<: *default
-  database: <%= ENV.fetch("SUPABASE_DB_NAME") %>
+  database: <%= ENV.fetch("DB_NAME") %>
 
-# Warning: The database defined as "test" will be erased and
-# re-generated from your development database when you run "rake".
-# Do not set this db to the same as development or production.
 test:
   <<: *default
-  database: <%= ENV.fetch("SUPABASE_DB_NAME_TEST") %>
+  database: <%= ENV.fetch("DB_NAME_TEST") %>
 
-
-# Store production database in the storage/ directory, which by default
-# is mounted as a persistent Docker volume in config/deploy.yml.
 production:
   primary:
     <<: *default
-    database: <%= ENV.fetch("SUPABASE_DB_NAME") %>
+    database: <%= ENV.fetch("DB_NAME_PROD") %>
   cache:
     <<: *default
-    database: <%= ENV.fetch("SUPABASE_DB_NAME_CACHE") %>
+    database: <%= ENV.fetch("DB_NAME_CACHE") %>
     migrations_paths: db/cache_migrate
   queue:
     <<: *default
-    database: <%= ENV.fetch("SUPABASE_DB_NAME_QUEUE") %>
+    database: <%= ENV.fetch("DB_NAME_QUEUE") %>
     migrations_paths: db/queue_migrate
   cable:
     <<: *default
-    database: <%= ENV.fetch("SUPABASE_DB_NAME_CABLE") %>
+    database: <%= ENV.fetch("DB_NAME_CABLE") %>
     migrations_paths: db/cable_migrate

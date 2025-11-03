@@ -11,7 +11,11 @@ Rails.application.routes.draw do
     get "google/callback", to: "google#callback"
   end
 
-  resources :users, only: [:show]
+  resources :users, only: [:show] do
+    collection do
+      get :me
+    end
+  end
 
   # Defines the root path route ("/")
   # root "posts#index"

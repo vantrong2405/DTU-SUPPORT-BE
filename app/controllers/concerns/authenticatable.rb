@@ -10,7 +10,6 @@ module Authenticatable
   private
 
   def authenticate_user!
-    session_cache = Services::Auth::SessionCacheService.new(session: session)
     user_id = session_cache.user_id
 
     unless user_id.present?
@@ -21,19 +20,25 @@ module Authenticatable
     @current_user = User.find_by(id: user_id)
 
     unless @current_user
-      session_cache.remove_user_id
-      render_error(message: "Unauthorized", details: "User not found", status: :unauthorized)
+      clear_session_and_render_error
       return
     end
 
     @current_user
   rescue ActiveRecord::RecordNotFound
-    session_cache = Services::Auth::SessionCacheService.new(session: session)
-    session_cache.remove_user_id
-    render_error(message: "Unauthorized", details: "User not found", status: :unauthorized)
+    clear_session_and_render_error
   end
 
   def current_user
     @current_user
+  end
+
+  def session_cache
+    @session_cache ||= Services::Auth::SessionCacheService.new(session: session)
+  end
+
+  def clear_session_and_render_error
+    session_cache.remove_user_id
+    render_error(message: "Unauthorized", details: "User not found", status: :unauthorized)
   end
 end

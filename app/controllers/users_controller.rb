@@ -2,15 +2,18 @@
 
 class UsersController < ApplicationController
   include Authenticatable
+  include Authorizable
+
+  before_action -> { authorize_current_user(:read) }, only: [:me]
+  before_action -> { load_and_authorize_resource(User, :read, :id) }, only: [:show]
+
+  def me
+    serialized_data = UserSerializer.new(current_user).serializable_hash[:data][:attributes]
+    render_success(data: serialized_data)
+  end
 
   def show
-    user = params[:id] == "me" ? current_user : User.find(params[:id])
-
-    render_success(data: {
-      id: user.id,
-      email: user.email,
-      name: user.name,
-      subscription_plan_id: user.subscription_plan_id
-    })
+    serialized_data = UserSerializer.new(@user).serializable_hash[:data][:attributes]
+    render_success(data: serialized_data)
   end
 end
