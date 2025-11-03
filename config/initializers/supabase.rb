@@ -1,23 +1,23 @@
+# frozen_string_literal: true
+
 require "net/http"
-require "uri"
-require "json"
 
 class Supabase
   def initialize
-    @url = "#{Rails.application.secrets.supabase[:url]}/rest/v1"
-    api_key = Rails.application.secrets.supabase[:key]
+    @url = "#{Rails.application.config.secrets.supabase[:url]}/rest/v1"
+    api_key = Rails.application.config.secrets.supabase[:key]
 
     @headers = {
-      "apikey" => api_key,
+      "apikey"        => api_key,
       "Authorization" => "Bearer #{api_key}",
-      "Content-Type" => "application/json",
-      "Prefer" => "return=representation"
+      "Content-Type"  => "application/json",
+      "Prefer"        => "return=representation",
     }
   end
 
   def get(table, filters: {})
     query = filters.any? ? filters : nil
-    execute_request(:get, table, query: query)
+    execute_request(:get, table, query:)
   end
 
   def post(table, data: {})

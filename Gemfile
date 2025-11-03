@@ -13,6 +13,7 @@ gem "kamal", require: false
 gem "thruster", require: false
 gem "dotenv-rails"
 gem 'faraday', '2.14'
+gem 'rack-cors', '3.0'
 group :development, :test do
   gem "debug", platforms: %i[ mri windows ], require: "debug/prelude"
   gem "brakeman", require: false

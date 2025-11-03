@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 Rails.application.routes.draw do
   # Define your application routes per the DSL in https://guides.rubyonrails.org/routing.html
 
@@ -9,11 +11,15 @@ Rails.application.routes.draw do
   namespace :oauth do
     get "google/redirect", to: "google#redirect"
     get "google/callback", to: "google#callback"
+    post "logout", to: "google#logout"
   end
+
+  # post "/logout", to: "sessions#destroy" # moved to oauth/google#logout
 
   resources :users, only: [:show] do
     collection do
       get :me
+      delete :logout
     end
   end
 

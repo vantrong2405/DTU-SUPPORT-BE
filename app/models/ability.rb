@@ -8,13 +8,11 @@ class Ability
 
     if admin?(user)
       can :read, User
-      can :update, User, id: user.id
-      can :destroy, User, id: user.id
     else
       can :read, User, id: user.id
-      can :update, User, id: user.id
-      can :destroy, User, id: user.id
     end
+    can :update, User, id: user.id
+    can :destroy, User, id: user.id
   end
 
   private

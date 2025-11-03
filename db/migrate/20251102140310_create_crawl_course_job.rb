@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 class CreateCrawlCourseJob < ActiveRecord::Migration[8.0]
   def change
     create_table :crawl_course_jobs do |t|

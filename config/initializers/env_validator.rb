@@ -4,15 +4,15 @@
 # are present in environment-specific .env file (.env.development, .env.staging, .env.production)
 class EnvValidator
   ENV_FILE = {
-    production: ".env.production",
-    staging: ".env.staging",
+    production:  ".env.production",
+    staging:     ".env.staging",
     development: ".env.development",
-    example: ".env.example"
+    example:     ".env.example",
   }.freeze
 
   NODE_ENV = {
     production: "production",
-    staging: "staging"
+    staging:    "staging",
   }.freeze
 
   def validate!
