@@ -46,6 +46,9 @@ class Oauth::GoogleController < ApplicationController
     }
     user.save!
 
+    session_cache = Services::Auth::SessionCacheService.new(session: session)
+    session_cache.store_user_id(user_id: user.id)
+
     if state[:return_url].present?
       redirect_to state[:return_url], allow_other_host: true
     else

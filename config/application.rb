@@ -29,6 +29,9 @@ module DtuSupportBe
     # Skip views, helpers and assets when generating a new resource.
     config.api_only = true
 
+    config.middleware.use ActionDispatch::Cookies
+    config.middleware.use ActionDispatch::Session::CookieStore, key: "_dtu_support_session"
+
     config.secrets = ActiveSupport::OrderedOptions.new
     secrets_file = Rails.root.join("config", "secrets.yml")
     if secrets_file.exist?
