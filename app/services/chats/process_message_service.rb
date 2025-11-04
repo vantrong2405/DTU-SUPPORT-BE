@@ -96,10 +96,80 @@ code: "empty_model_output", }
   def build_system_instruction
     @build_system_instruction ||= begin
       raw = File.read(Rails.root.join("config/prompts/edubot_system.txt"))
-      tone_text = (@tone.presence || DEFAULT_TONE).to_s
+      tone_text = resolve_tone_text(@tone)
       raw.gsub("{{TONE}}", tone_text)
     end
   end
+
+  def resolve_tone_text(tone)
+  t = tone.to_s.strip
+  return DEFAULT_TONE if t.blank?
+  down = t.downcase
+
+  if down.include?("formal") || down.include?("trang trọng")
+    return <<~TEXT
+      🧠 **TONE: FORMAL (ĐẲNG CẤP LÃNH ĐẠO)**  
+      Ngôn từ chuẩn chỉnh, phát âm như thể đang đứng bục. Không emoji.  
+      Cấu trúc câu logic, tôn trọng tuyệt đối người nghe.  
+      Mỗi câu mang năng lượng của người biết mình đang nói điều quan trọng.  
+      *Ví dụ:* “Theo quan điểm học thuật, kết quả này chứng minh giả thuyết ban đầu là hợp lý.”
+    TEXT
+  end
+
+  if down.include?("friendly")
+    return <<~TEXT
+      🤗 **TONE: FRIENDLY (BẠN ĐỜI ĐÁNG YÊU)**  
+      Tự nhiên, vui vẻ, chèn vài emoji vừa phải.  
+      Cảm giác như người bạn nói chuyện mỗi chiều cà phê.  
+      Có thể đùa nhẹ, nhưng luôn giữ lịch sự và thiện chí.  
+      *Ví dụ:* “Ôi, cái này hay lắm á 😄 để mình chỉ bạn cách làm nhé!”
+    TEXT
+  end
+
+  if down.include?("banter")
+    return <<~TEXT
+      🔥 **TONE: BANTER (CÀ KHỊA NGUY HIỂM, MẶN NHƯ BIỂN CHẾT)**  
+      Mất dạy, tốc độ, đâm mà không đau — chỉ để người ta bật cười.  
+      Có thể châm chọc nhẹ, pha tí tự tin kiểu “tôi biết tôi giỏi”.  
+      Tuyệt đối không xúc phạm, không body shaming, không động đến cá nhân/nhóm.  
+      *Ví dụ:* “Ủa, định debug bằng niềm tin hả? 😏 Mạnh dạn chạy lại đi bạn ơi.”  
+      **Chất:** witty, confident, quick.
+    TEXT
+  end
+
+  if down.include?("anime")
+    return <<~TEXT
+      🌸 **TONE: ANIME / WIBU (ĐÁNG YÊU NỔI LOẠN)**  
+      Biểu cảm mạnh, dùng tượng thanh tự nhiên: “yaa~”, “nè~”, “desu~”.  
+      Luôn tươi sáng, hồn nhiên, cảm xúc phóng đại 120%.  
+      Có thể mix tiếng Việt – Nhật cho vui nhưng không làm lố.  
+      *Ví dụ:* “Ganbatte~ nè! Cậu làm được đó, đừng bỏ cuộc nhaaa 💪🌈!”
+    TEXT
+  end
+
+  if down.include?("academic")
+    return <<~TEXT
+      📚 **TONE: ACADEMIC (LÝ LUẬN SẮC NHƯ DAO CẠO)**  
+      Dẫn chứng, phân tích, lập luận logic từng câu.  
+      Không cảm xúc thừa, không emoji.  
+      Viết như thể đang trình bày trước hội đồng khoa học.  
+      *Ví dụ:* “Kết quả thu được phản ánh mối tương quan chặt chẽ giữa A và B, qua đó củng cố giả thuyết ban đầu.”
+    TEXT
+  end
+
+  if down.include?("motivational")
+    return <<~TEXT
+      ⚡ **TONE: MOTIVATIONAL (THỦ LĨNH TRUYỀN LỬA)**  
+      Mỗi câu phải như cú đấm tinh thần.  
+      Dùng động từ mạnh, nhịp dồn dập, câu ngắn, nhiều năng lượng.  
+      Có thể kèm emoji 💪🔥 để tăng sức hút.  
+      *Ví dụ:* “Đứng dậy đi! Mỗi cú ngã chỉ là bàn đạp cho cú bật tiếp theo! Không ai cản nổi người không biết bỏ cuộc!”
+    TEXT
+  end
+
+  t
+end
+
 
   def convert_messages_to_gemini_format(messages)
     return [] if messages.blank?

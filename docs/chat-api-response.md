@@ -7,8 +7,8 @@ Khi client gọi `POST /api/chat`, backend sẽ trả về response theo format 
 ## 🔄 Flow Hoàn Chỉnh
 
 ```
-1. Client → POST /api/chat { messages: [...] }
-2. ChatsController → Chats::ProcessMessageService.call(messages:)
+1. Client → POST /api/chat { messages: [...] } với query: /api/chat?tone=...
+2. ChatsController → Chats::ProcessMessageService.call(messages:, tone:)
 3. Service → Gọi Gemini API với tools definition
 4. Nếu có function_call → Execute tool → Gửi tool_result về Gemini → Nhận final response
 5. Service → Trả về { success, content, tool_result, metadata }
@@ -193,6 +193,34 @@ interface ErrorResponse {
     details?: string
   }>
 }
+
+### Truyền tham số tone (tùy chọn, qua query params)
+
+- Ý nghĩa: ghi đè giọng điệu hệ thống khi sinh câu trả lời. Nếu không truyền, backend dùng mặc định: "Thân thiện, chuyên nghiệp, súc tích".
+- Giá trị gợi ý: "Trang trọng", "Thân thiện", "Ngắn gọn", "Giải thích chi tiết". Có thể kết hợp: "Thân thiện, súc tích".
+
+Ví dụ truyền `tone` qua query params:
+
+```bash
+curl -X POST 'http://localhost:3000/api/chat?tone=Th%C3%A2n%20thi%E1%BB%87n%2C%20s%C3%BAc%20t%E1%BA%AFc' \
+  -H 'Content-Type: application/json' \
+  -d '{ "messages": [{ "role": "user", "content": "hi" }] }'
+```
+
+Ví dụ (fetch) dùng query params:
+
+```typescript
+await fetch('/api/chat?tone=Trang%20tr%E1%BB%8Dng%2C%20s%C3%BAc%20t%E1%BA%AFc', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({
+    messages: [{ role: 'user', content: 'Tôi muốn tính GPA mục tiêu' }]
+  })
+})
+```
+
+Ghi chú:
+- Backend đọc `tone` từ `params[:tone]` trong query string.
 ```
 
 ### Ví Dụ Sử Dụng (Frontend)
