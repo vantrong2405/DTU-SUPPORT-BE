@@ -2,10 +2,7 @@
 
 class Oauth::GoogleController < ApplicationController
   def redirect
-    if params[:return_url].blank?
-      render_error(message: "Invalid OAuth redirect", details: "Missing return_url", status: :bad_request)
-      return
-    end
+    render_error(message: "Invalid OAuth redirect", details: "Missing return_url", status: :bad_request) and return if params[:return_url].blank?
 
     oauth_url = GoogleOauth::Client.generate_auth_url(base_url: request.base_url, return_url: params[:return_url])
     redirect_to oauth_url, allow_other_host: true
@@ -14,17 +11,10 @@ class Oauth::GoogleController < ApplicationController
   end
 
   def callback
-    state        = GoogleOauth::Client.decode_state(oauth_callback_params[:state])
-    return render_error(message: "OAuth error", details: oauth_callback_params[:error], status: :bad_request) if oauth_callback_params[:error].present?
+    state = GoogleOauth::Client.decode_state(oauth_callback_params[:state])
+    render_error(message: "OAuth error", details: oauth_callback_params[:error], status: :bad_request) and return if oauth_callback_params[:error].present?
 
-    token_resp   = exchange_tokens(oauth_callback_params[:code], state[:redirect_uri])
-    user_info    = GoogleOauth::Client.get_user_info(token_resp["access_token"])
-    user         = upsert_user_from_oauth(user_info, token_resp)
-    session[:user_id] = user.id
-    Auth::SessionStore.new(session: session, user_id: user.id).store_session(
-      access_token:  token_resp["access_token"],
-      refresh_token: token_resp["refresh_token"],
-    )
+    complete_google_sign_in!(code: oauth_callback_params[:code], redirect_uri: state[:redirect_uri])
 
     redirect_to state[:return_url], allow_other_host: true
   rescue StandardError => e
@@ -52,5 +42,15 @@ class Oauth::GoogleController < ApplicationController
     user
   end
 
-  # logout moved to UsersController#logout
+  def complete_google_sign_in!(code:, redirect_uri:)
+    token_resp = exchange_tokens(code, redirect_uri)
+    user_info = GoogleOauth::Client.get_user_info(token_resp["access_token"])
+    user = upsert_user_from_oauth(user_info, token_resp)
+    session[:user_id] = user.id
+    Auth::SessionStore.new(session:, user_id: user.id).store_session(
+      access_token:  token_resp["access_token"],
+      refresh_token: token_resp["refresh_token"],
+    )
+    user
+  end
 end

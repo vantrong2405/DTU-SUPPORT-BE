@@ -10,23 +10,12 @@ class GoogleOauth::Client
   end
 
   def self.exchange_code_for_token(code:, redirect_uri:)
-    uri      = URI(Rails.application.config.secrets.google_oauth[:token_uri])
-    params   = build_token_params(code:, redirect_uri:)
-
-    Rails.logger.info "GoogleOauth: Exchanging code for token. redirect_uri=#{redirect_uri}"
-
+    uri = URI(Rails.application.config.secrets.google_oauth[:token_uri])
+    params = build_token_params(code:, redirect_uri:)
     response = faraday_connection.post(uri, params)
-
-    if response.success?
-      JSON.parse(response.body)
-    else
-      Rails.logger.error "GoogleOauth: Token exchange failed (status=#{response.status}) redirect_uri=#{redirect_uri}"
-      Rails.logger.error "Body=#{response.body}"
-      nil
-    end
-  rescue Faraday::Error => e
-    Rails.logger.error "GoogleOauth: Network error during token exchange #{e.class}: #{e.message}"
-    Rails.logger.error e.backtrace&.join("\n")
+    return JSON.parse(response.body) if response.success?
+    nil
+  rescue Faraday::Error
     nil
   end
 
@@ -37,17 +26,12 @@ class GoogleOauth::Client
   def self.refresh_access_token!(refresh_token)
     raise StandardError, "No refresh token provided" if refresh_token.blank?
 
-    uri      = URI(Rails.application.config.secrets.google_oauth[:token_uri])
-    params   = build_refresh_params(refresh_token:)
+    uri = URI(Rails.application.config.secrets.google_oauth[:token_uri])
+    params = build_refresh_params(refresh_token:)
     response = faraday_connection.post(uri, params)
-
-    if response.success?
-      JSON.parse(response.body)
-    else
-      raise StandardError, "Failed to refresh token"
-    end
-  rescue Faraday::Error => e
-    Rails.logger.error "GoogleOauth: Network error during token refresh: #{e.class}: #{e.message}\n#{e.backtrace&.join("\n") }"
+    return JSON.parse(response.body) if response.success?
+    raise StandardError, "Failed to refresh token"
+  rescue Faraday::Error
     raise StandardError, "Failed to refresh token"
   end
 
@@ -58,7 +42,7 @@ class GoogleOauth::Client
 
     !response.success?
   rescue Faraday::Error => e
-    Rails.logger.error "GoogleOauth: Network error during token check: #{e.class}: #{e.message}\n#{e.backtrace&.join("\n") }"
+    Rails.logger.error "GoogleOauth: Network error during token check: #{e.class}: #{e.message}\n#{e.backtrace&.join("\n")}"
     true
   end
 
@@ -69,14 +53,9 @@ class GoogleOauth::Client
       req.headers["Authorization"] = "Bearer #{access_token}"
     end
 
-    if response.success?
-      JSON.parse(response.body)
-    else
-      Rails.logger.error "GoogleOauth: Failed to fetch user info: #{response.status}"
-      raise StandardError, "Failed to fetch user info"
-    end
-  rescue Faraday::Error => e
-    Rails.logger.error "GoogleOauth: Network error during user info fetch: #{e.class}: #{e.message}\n#{e.backtrace&.join("\n") }"
+    return JSON.parse(response.body) if response.success?
+    raise StandardError, "Failed to fetch user info"
+  rescue Faraday::Error
     nil
   end
 

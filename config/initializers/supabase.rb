@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require "net/http"
+require_relative "../../lib/http_client"
 
 class Supabase
   def initialize
@@ -24,51 +25,37 @@ class Supabase
     execute_request(:post, table, body: data)
   end
 
-  def patch(table, id, data: {})
-    execute_request(:patch, "#{table}?id=eq.#{id}", body: data)
+  def patch(table, record_id, data: {})
+    execute_request(:patch, "#{table}?id=eq.#{record_id}", body: data)
   end
 
-  def delete(table, id)
-    execute_request(:delete, "#{table}?id=eq.#{id}")
+  def delete(table, record_id)
+    execute_request(:delete, "#{table}?id=eq.#{record_id}")
   end
 
   private
 
   def execute_request(method, path, body: nil, query: nil)
-    uri = URI("#{@url}/#{path}")
-    uri.query = URI.encode_www_form(query) if query
-
-    http = Net::HTTP.new(uri.host, uri.port)
-    http.use_ssl = uri.scheme == "https"
-
-    request_class = case method
-                    when :get then Net::HTTP::Get
-                    when :post then Net::HTTP::Post
-                    when :patch then Net::HTTP::Patch
-                    when :delete then Net::HTTP::Delete
-                    end
-
-    request = request_class.new(uri.request_uri)
-    @headers.each { |k, v| request[k] = v }
-    request.body = body.to_json if body
-
-    response = http.request(request)
+    uri = build_uri(path, query)
+    response = HttpClient.request_json(method:, url: uri.to_s, headers: @headers, body:)
     handle_response(response)
   end
 
   def handle_response(response)
-    case response.code.to_i
-    when 200..299
-      JSON.parse(response.body) rescue response.body
-    when 400
-      raise Supabase::BadRequestError, response.body
-    when 401
-      raise Supabase::UnauthorizedError, response.body
-    when 404
-      raise Supabase::NotFoundError, response.body
-    else
-      raise Supabase::ApiError, "HTTP #{response.code}: #{response.body}"
-    end
+    code = response.code.to_i
+    return JSON.parse(response.body) rescue response.body if (200..299).cover?(code)
+    raise error_for_code(code), (code >= 400 ? response.body : "HTTP #{code}: #{response.body}")
+  end
+
+  def build_uri(path, query)
+    uri = URI("#{@url}/#{path}")
+    uri.query = URI.encode_www_form(query) if query
+    uri
+  end
+
+  def error_for_code(code)
+    return Supabase::ApiError if code >= 500
+    { 400 => Supabase::BadRequestError, 401 => Supabase::UnauthorizedError, 404 => Supabase::NotFoundError }[code] || Supabase::ApiError
   end
 
   class ApiError < StandardError; end
