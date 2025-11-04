@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 class CreateAiScheduleResult < ActiveRecord::Migration[8.0]
   def change
     create_table :ai_schedule_results do |t|

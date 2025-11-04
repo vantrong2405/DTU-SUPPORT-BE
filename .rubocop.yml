@@ -1,8 +1,74 @@
-# Omakase Ruby styling for Rails
-inherit_gem: { rubocop-rails-omakase: rubocop.yml }
+# rubocop-rails-omakase automatically includes necessary plugins
+# No need to require additional plugins
 
-# Overwrite or add rules to create your own house style
-#
-# # Use `[a, [b, c]]` not `[ a, [ b, c ] ]`
-# Layout/SpaceInsideArrayLiteralBrackets:
-#   Enabled: false
+AllCops:
+  UseCache: true
+  SuggestExtensions: false
+  Include:
+    - '**/*.rb'
+    - 'app/views/**/*.jb'
+    - 'app/views/**/*.jbuilder'
+    - 'db/schemas/Schemafile'
+    - 'db/schemas/*.schema'
+  Exclude:
+  <% `git status --ignored --porcelain`.lines.grep(/^!! /).each do |path| %>
+    - '<%= path.sub(/^!! /, '').strip.sub(/\/$/, '/**/*') %>'
+  <% end %>
+    - 'Gemfile.lock'
+    - 'db/schema.rb'
+  NewCops: enable
+
+Layout/EmptyLineAfterGuardClause:
+  Enabled: false
+Layout/FirstArgumentIndentation:
+  EnforcedStyle: consistent
+Layout/HashAlignment:
+  EnforcedHashRocketStyle: table
+  EnforcedColonStyle: table
+
+Metrics/AbcSize:
+  Enabled: false
+Metrics/BlockLength:
+  Exclude:
+    - '**/*.json.jbuilder'
+    - '**/*.json.jb'
+Metrics/ClassLength:
+  Enabled: false
+Metrics/CollectionLiteralLength:
+  Enabled: false
+Metrics/ModuleLength:
+  Enabled: false
+
+Naming/MethodParameterName:
+  AllowedNames:
+    - ad
+Naming/VariableNumber:
+  EnforcedStyle: snake_case
+
+Style/AsciiComments:
+  Enabled: false
+Style/ClassAndModuleChildren:
+  Enabled: false
+Style/Documentation:
+  Enabled: false
+Style/GuardClause:
+  Enabled: false
+Style/HashSyntax:
+  EnforcedShorthandSyntax: always
+Style/IfUnlessModifier:
+  Enabled: false
+Style/NumericPredicate:
+  Enabled: false
+Style/RescueModifier:
+  Enabled: false
+Style/SafeNavigationChainLength:
+  Enabled: false
+Style/StringLiterals:
+  Enabled: true
+  EnforcedStyle: double_quotes
+Style/TrailingCommaInArguments:
+  EnforcedStyleForMultiline: consistent_comma
+Style/TrailingCommaInArrayLiteral:
+  EnforcedStyleForMultiline: consistent_comma
+Style/TrailingCommaInHashLiteral:
+  EnforcedStyleForMultiline: consistent_comma

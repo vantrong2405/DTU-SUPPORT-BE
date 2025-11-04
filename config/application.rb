@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require_relative "boot"
 
 require "rails/all"
@@ -29,11 +31,19 @@ module DtuSupportBe
     # Skip views, helpers and assets when generating a new resource.
     config.api_only = true
 
+    config.middleware.use ActionDispatch::Cookies
+    config.middleware.use ActionDispatch::Session::CookieStore, key: "_dtu_support_session", expire_after: 1.week
+
     config.secrets = ActiveSupport::OrderedOptions.new
     secrets_file = Rails.root.join("config", "secrets.yml")
     if secrets_file.exist?
       secrets = YAML.load(ERB.new(secrets_file.read).result, aliases: true)[Rails.env]
       config.secrets.merge!(secrets.deep_symbolize_keys) if secrets
+    end
+
+    # Make secrets accessible via Rails.application.secrets
+    def self.secrets
+      config.secrets
     end
   end
 end
