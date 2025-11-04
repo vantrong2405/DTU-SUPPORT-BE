@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 class Auth::SessionStore < BaseService
   attr_reader :session, :user_id
 
@@ -7,15 +9,15 @@ class Auth::SessionStore < BaseService
     super()
   end
 
-  def get_session
+  def session_data
     @session[cache_key]
   end
 
   def store_session(access_token: nil, refresh_token: nil)
     @session[cache_key] = {
-      user_id: user_id,
-      access_token: access_token,
-      refresh_token: refresh_token,
+      user_id:,
+      access_token:,
+      refresh_token:,
     }
   end
 

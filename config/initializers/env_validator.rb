@@ -19,7 +19,7 @@ class EnvValidator
     required_keys = extract_keys_from_file(ENV_FILE[:example])
     return if required_keys.empty?
 
-    env_file = get_env_file_name
+    env_file = env_file_name
     existing_keys = extract_keys_from_file(env_file)
     missing_keys = required_keys - existing_keys
 
@@ -33,7 +33,7 @@ class EnvValidator
 
   private
 
-  def get_env_file_name
+  def env_file_name
     node_env = Rails.env
 
     return ENV_FILE[:production] if node_env == NODE_ENV[:production]
@@ -45,19 +45,9 @@ class EnvValidator
   def extract_keys_from_file(filename)
     path = Rails.root.join(filename)
 
-    begin
-      content = File.read(path)
-      parse_env_keys(content)
-    rescue Errno::ENOENT
-      if filename == ENV_FILE[:example]
-        raise ".env.example file not found."
-      end
-
-      env_file = get_env_file_name
-      raise <<~ERROR
-        #{env_file} file not found. Please copy .env.example to #{env_file} and fill in the values.
-      ERROR
-    end
+    File.read(path).then { |content| parse_env_keys(content) }
+  rescue Errno::ENOENT
+    handle_missing_env_file!(filename)
   end
 
   def parse_env_keys(content)
@@ -65,6 +55,15 @@ class EnvValidator
            .map(&:strip)
            .reject { |line| line.empty? || line.start_with?("#") }
            .filter_map { |line| line.match(/^([A-Z_][A-Z0-9_]*)=/)&.[](1) }
+  end
+
+  def handle_missing_env_file!(filename)
+    raise ".env.example file not found." if filename == ENV_FILE[:example]
+
+    env_file = env_file_name
+    raise <<~ERROR
+      #{env_file} file not found. Please copy .env.example to #{env_file} and fill in the values.
+    ERROR
   end
 end
 
