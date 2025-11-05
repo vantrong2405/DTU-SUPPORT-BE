@@ -75,7 +75,7 @@ class Chats::ToolsDefinitionService
       name:        "calculateRequiredFinalScore",
       description: "Tính điểm thi cuối kỳ tối thiểu cần đạt để qua môn dựa trên điểm thành phần hiện có và trọng số",
       properties:  {
-        components: {
+        components:      {
           type:        "ARRAY",
           description: "Mảng các thành phần điểm đã có (chuyên cần, giữa kỳ, đồ án, sáng tạo, v.v.)",
           items:       {
@@ -85,7 +85,7 @@ class Chats::ToolsDefinitionService
               weight: { type: "NUMBER", description: "Trọng số của thành phần (%)" },
               score:  { type: "NUMBER", description: "Điểm đạt được của thành phần (0-10)" },
             },
-            required:    %w[name weight score],
+            required:   %w[name weight score],
           },
         },
         finalExamWeight: {
@@ -108,7 +108,7 @@ class Chats::ToolsDefinitionService
       name:        "calculateFinalScore",
       description: "Tính điểm tổng kết và xếp loại khi biết điểm thi cuối kỳ (dự đoán điểm tổng kết)",
       properties:  {
-        components: {
+        components:      {
           type:        "ARRAY",
           description: "Mảng các thành phần điểm đã có (chuyên cần, giữa kỳ, đồ án, sáng tạo, v.v.)",
           items:       {
@@ -118,14 +118,14 @@ class Chats::ToolsDefinitionService
               weight: { type: "NUMBER", description: "Trọng số của thành phần (%)" },
               score:  { type: "NUMBER", description: "Điểm đạt được của thành phần (0-10)" },
             },
-            required:    %w[name weight score],
+            required:   %w[name weight score],
           },
         },
         finalExamWeight: {
           type:        "NUMBER",
           description: "Trọng số của điểm thi cuối kỳ (%)",
         },
-        finalExamScore: {
+        finalExamScore:  {
           type:        "NUMBER",
           description: "Điểm thi cuối kỳ (0-10)",
         },

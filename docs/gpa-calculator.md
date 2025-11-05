@@ -295,24 +295,152 @@ Công cụ tính GPA thể dục theo thang điểm DTU.
 
 ---
 
-## 🟦 TAB 4 – TÍNH ĐIỂM QUA MÔN (Coming Soon)
+## 🟨 TAB 4 – TÍNH ĐIỂM QUA MÔN
 
 ### 🎯 Mục Đích
 
-Tính điểm cần ở bài thi cuối để qua môn theo trọng số.
+Giúp sinh viên tính điểm thi cuối kỳ tối thiểu cần đạt để qua môn dựa trên điểm thành phần hiện có và tỷ lệ trọng số từng cột. Cho phép dự đoán điểm tổng kết và xếp loại nếu biết trước điểm thi cuối kỳ.
 
-### 📥 Dữ Liệu Đầu Vào (Dự Kiến)
+=> Mục đích là giúp sinh viên ước lượng khả năng qua môn trước khi thi và biết mình cần đạt bao nhiêu điểm trong thi cuối kỳ.
 
-- Điểm các thành phần hiện có (quá trình, giữa kỳ, etc.)
-- Trọng số của từng thành phần
-- Trọng số của bài thi cuối
-- Điểm đậu yêu cầu (thường ≥ 4.0 hoặc ≥ 5.0)
+### 📥 Dữ Liệu Đầu Vào
 
-### ⚙️ Cách Tính (Dự Kiến)
+Sinh viên sẽ nhập các giá trị sau:
 
-```
-Điểm_cần_thi_cuối = (Điểm_đậu - Σ(điểm_thành_phần × trọng_số)) / trọng_số_thi_cuối
-```
+| Trường | Label | Ý Nghĩa | Type | Validation | Ví Dụ |
+|--------|-------|---------|------|------------|-------|
+| `components` | Các thành phần điểm | Mảng các thành phần điểm đã có | Array | Required | [{name: "Chuyên cần", weight: 10, score: 9.0}] |
+| `finalExamWeight` | Trọng số thi cuối kỳ (%) | Trọng số của điểm thi cuối kỳ | Number (float) | > 0, ≤ 100 | 50 |
+| `minPassingScore` | Điểm tối thiểu để qua môn | Điểm tối thiểu cần đạt (thang 10) | Number (float) | 0 ≤ value ≤ 10.0 | 4.0 |
+| `finalExamScore` | Điểm thi cuối kỳ (Optional) | Điểm thi cuối kỳ giả định để dự đoán | Number (float) | 0 ≤ value ≤ 10.0 | 8.0 |
+
+👉 **Sinh viên nhập các cột điểm và trọng số tương ứng**, ví dụ:
+
+| Thành phần | Trọng số (%) | Điểm đạt được | Ghi chú |
+|-----------|--------------|---------------|---------|
+| Chuyên cần | 10 | 9.0 | Điểm quá trình |
+| Giữa kỳ | 20 | 7.0 | Điểm kiểm tra giữa kỳ |
+| Đồ án | 10 | 8.5 | (Nếu có) |
+| Sáng tạo | 10 | 7.5 | (Nếu có) |
+| Cuối kỳ | 50 | (chưa có hoặc nhập để dự đoán) | Điểm thi cuối kỳ |
+
+**Lưu ý quan trọng:**
+- Tổng trọng số của tất cả thành phần (bao gồm thi cuối kỳ) phải = 100%
+- Điểm thi cuối kỳ tối thiểu phải ≥ 1.0 (theo quy định trường)
+- Điểm tổng kết ≥ 4.0 mới qua môn
+
+### ⚙️ Cách Tính
+
+Hệ thống sẽ:
+
+1. **Tính điểm tổng kết (khi biết điểm thi cuối kỳ):**
+
+   ```
+   Điểm_tổng_kết = Σ(điểm_thành_phần × trọng_số_thành_phần) / 100
+   ```
+
+   **Ví dụ:**
+   - Chuyên cần: 9.0 × 10% = 0.9
+   - Giữa kỳ: 7.0 × 20% = 1.4
+   - Đồ án: 8.5 × 10% = 0.85
+   - Sáng tạo: 7.5 × 10% = 0.75
+   - Cuối kỳ: 8.0 × 50% = 4.0
+   - **Điểm_tổng_kết** = (90 + 140 + 85 + 75 + 400) / 100 = **7.9**
+
+2. **Tính điểm thi tối thiểu cần để qua môn:**
+
+   Giả sử tổng điểm các phần đã có là `partialScore` (theo %), và trọng số thi cuối kỳ là `examWeight`.
+
+   ```
+   Điểm_thi_cần = (Điểm_đạt_môn - partialScore) / (examWeight / 100)
+   ```
+
+   **Ví dụ:**
+   - `partialScore` = 0.9 + 1.4 + 0.85 + 0.75 = 3.9
+   - `examWeight` = 50%
+   - `Điểm_đạt_môn` = 4.0
+
+   ```
+   Điểm_thi_cần = (4.0 - 3.9) / 0.5
+                 = 0.1 / 0.5
+                 = 0.2
+   ```
+
+   👉 **Kết luận:** Cần ít nhất 0.2 điểm cuối kỳ để qua môn, nhưng do quy định tối thiểu 1.0 → **Cần ít nhất 1.0 điểm cuối kỳ**.
+
+   **Trường hợp đặc biệt:**
+   - Nếu `Điểm_thi_cần < 1.0` → Trả về `1.0` (theo quy định tối thiểu)
+   - Nếu `Điểm_thi_cần > 10.0` → Trả về `null` (không thể qua môn)
+
+3. **Dự đoán điểm tổng kết khi biết điểm thi cuối kỳ:**
+
+   ```
+   Điểm_tổng_kết_dự_đoán = partialScore + (examScore × examWeight / 100)
+   ```
+
+   **Ví dụ:**
+   - `partialScore` = 3.9
+   - `examScore` = 9.0
+   - `examWeight` = 50%
+
+   ```
+   Điểm_tổng_kết = 3.9 + (9.0 × 0.5)
+                   = 3.9 + 4.5
+                   = 8.4
+   ```
+
+   Result: `Điểm_tổng_kết = 8.4` → **Giỏi (A)**
+
+   **Quy đổi sang điểm chữ và thang 4:**
+
+   Dựa trên bảng thang điểm Duy Tân:
+   - 8.4 → **A** (thang 4: 4.0)
+   - 7.9 → **B+** (thang 4: 3.33)
+   - 7.0 → **B** (thang 4: 3.0)
+   - 6.0 → **C+** (thang 4: 2.33)
+   - 5.0 → **C** (thang 4: 2.0)
+   - 4.0 → **D** (thang 4: 1.0)
+   - < 4.0 → **F** (thang 4: 0.0) → Không đạt
+
+### 📤 Kết Quả Đầu Ra
+
+Hệ thống hiển thị:
+
+1. **Điểm thi tối thiểu cần để qua môn:**
+
+   **Nếu có thể qua môn:**
+   - "Bạn cần ít nhất **1.43** điểm cuối kỳ để qua môn (≥ 4.0 điểm tổng kết)."
+   - Styling: Primary colors (success indicator)
+   - Icon: ✅ CheckCircle
+
+   **Nếu không thể qua môn:**
+   - "Với điểm hiện tại, bạn không thể qua môn ngay cả khi đạt điểm tối đa (10.0) trong thi cuối kỳ."
+   - Styling: Destructive colors (error indicator)
+   - Icon: ❌ XCircle
+
+2. **Dự đoán kết quả tổng kết khi nhập điểm thi cuối kỳ giả định:**
+
+   - **Tổng điểm (thang 10):** Hiển thị với 2 chữ số thập phân: `7.90`
+   - **Quy đổi sang thang 4:** Hiển thị với 2 chữ số thập phân: `3.33`
+   - **Điểm chữ (A, B+, C, v.v.):** Badge với màu sắc phù hợp (A+/A: Primary, A-/B+: Accent, B/B-: Muted, C+/C/C-: Muted, D: Muted, F: Destructive)
+   - **Trạng thái:**
+     - **"Đạt"** (≥ 4.0) → Primary color, ✅ CheckCircle
+     - **"Không đạt"** (< 4.0) → Destructive color, ❌ XCircle
+
+3. **Biểu đồ nhỏ** (Optional - Future Enhancement):
+   - Thanh progress hiển thị tổng điểm hiện có (%)
+   - Dấu mốc thể hiện ngưỡng "qua môn" (4.0)
+
+### 🧩 Mục Tiêu Của Tab Này
+
+- Giúp sinh viên chủ động ước lượng khả năng qua môn trước khi thi
+- Cho phép giả lập kết quả thi để biết mình sẽ đạt được gì
+- Hỗ trợ tính toán linh hoạt cho mọi môn học (vì số lượng cột và % thay đổi tùy môn)
+- Trực quan, dễ hiểu, không cần nhớ công thức
+
+### ✅ Tóm Tắt Ngắn Gọn
+
+Tab 4 là nơi sinh viên tính điểm thi cuối kỳ tối thiểu cần đạt để qua môn dựa trên điểm thành phần hiện có và tỷ lệ trọng số. Hệ thống hỗ trợ tính toán linh hoạt với nhiều thành phần điểm và trọng số khác nhau, cho phép dự đoán điểm tổng kết và xếp loại nếu biết trước điểm thi cuối kỳ.
 
 ---
 

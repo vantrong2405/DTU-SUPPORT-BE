@@ -7,11 +7,11 @@ class Chats::ProcessMessageService < BaseService
   TOP_K = 1
   DEFAULT_TONE = "Thân thiện, chuyên nghiệp, súc tích"
   UI_COMPONENTS = {
-    "calculateTargetGpa"           => "GpaResultCard",
-    "calculateSimulationGpa"       => "GpaResultCard",
+    "calculateTargetGpa"          => "GpaResultCard",
+    "calculateSimulationGpa"      => "GpaResultCard",
     "calculatePeGpa"              => "PeResultCard",
     "calculateRequiredFinalScore" => "FinalScoreResultCard",
-    "calculateFinalScore"          => "FinalScoreResultCard",
+    "calculateFinalScore"         => "FinalScoreResultCard",
   }.freeze
 
   GRADE_POINTS = {
@@ -112,75 +112,74 @@ code: "empty_model_output", }
   end
 
   def resolve_tone_text(tone)
-  t = tone.to_s.strip
-  return DEFAULT_TONE if t.blank?
-  down = t.downcase
+    t = tone.to_s.strip
+    return DEFAULT_TONE if t.blank?
+    down = t.downcase
 
-  if down.include?("formal") || down.include?("trang trọng")
-    return <<~TEXT
-      🧠 **TONE: FORMAL (ĐẲNG CẤP LÃNH ĐẠO)**  
-      Ngôn từ chuẩn chỉnh, phát âm như thể đang đứng bục. Không emoji.  
-      Cấu trúc câu logic, tôn trọng tuyệt đối người nghe.  
-      Mỗi câu mang năng lượng của người biết mình đang nói điều quan trọng.  
-      *Ví dụ:* “Theo quan điểm học thuật, kết quả này chứng minh giả thuyết ban đầu là hợp lý.”
-    TEXT
+    if down.include?("formal") || down.include?("trang trọng")
+      return <<~TEXT
+        🧠 **TONE: FORMAL (ĐẲNG CẤP LÃNH ĐẠO)**#{'  '}
+        Ngôn từ chuẩn chỉnh, phát âm như thể đang đứng bục. Không emoji.#{'  '}
+        Cấu trúc câu logic, tôn trọng tuyệt đối người nghe.#{'  '}
+        Mỗi câu mang năng lượng của người biết mình đang nói điều quan trọng.#{'  '}
+        *Ví dụ:* “Theo quan điểm học thuật, kết quả này chứng minh giả thuyết ban đầu là hợp lý.”
+      TEXT
+    end
+
+    if down.include?("friendly")
+      return <<~TEXT
+        🤗 **TONE: FRIENDLY (BẠN ĐỜI ĐÁNG YÊU)**#{'  '}
+        Tự nhiên, vui vẻ, chèn vài emoji vừa phải.#{'  '}
+        Cảm giác như người bạn nói chuyện mỗi chiều cà phê.#{'  '}
+        Có thể đùa nhẹ, nhưng luôn giữ lịch sự và thiện chí.#{'  '}
+        *Ví dụ:* “Ôi, cái này hay lắm á 😄 để mình chỉ bạn cách làm nhé!”
+      TEXT
+    end
+
+    if down.include?("banter")
+      return <<~TEXT
+        💥 **TONE: BANTER (BỐ LÁO CÓ TRÌNH, GẮT MÀ VẪN THÂN)**#{'  '}
+        Nói kiểu anh em trong team cà khịa nhau cho tỉnh người.#{'  '}
+        Giọng bố đời nhẹ, không cần to tiếng — câu nào nói ra cũng có sức nặng, nghe xong là biết thân ai phận nấy.#{'  '}
+        Thẳng, tự tin, đôi khi hơi khinh nhẹ cho vui, nhưng không bao giờ mất dạy.#{'  '}
+        *Ví dụ:* “Ủa ông push kiểu này mà CI chưa bỏ việc hả, respect đó nha 😏.”#{'  '}
+        Hay: “Nhìn commit ông mà tôi muốn rollback cả team luôn á.”#{'  '}
+        **Chất:** bold, sharp, confident, brotherly — hỗn đúng liều, duyên đúng chỗ.
+      TEXT
+    end
+
+    if down.include?("anime")
+      return <<~TEXT
+        🌸 **TONE: ANIME / WIBU (ĐÁNG YÊU NỔI LOẠN)**#{'  '}
+        Biểu cảm mạnh, dùng tượng thanh tự nhiên: “yaa~”, “nè~”, “desu~”.#{'  '}
+        Luôn tươi sáng, hồn nhiên, cảm xúc phóng đại 120%.#{'  '}
+        Có thể mix tiếng Việt – Nhật cho vui nhưng không làm lố.#{'  '}
+        *Ví dụ:* “Ganbatte~ nè! Cậu làm được đó, đừng bỏ cuộc nhaaa 💪🌈!”
+      TEXT
+    end
+
+    if down.include?("academic")
+      return <<~TEXT
+        📚 **TONE: ACADEMIC (LÝ LUẬN SẮC NHƯ DAO CẠO)**#{'  '}
+        Dẫn chứng, phân tích, lập luận logic từng câu.#{'  '}
+        Không cảm xúc thừa, không emoji.#{'  '}
+        Viết như thể đang trình bày trước hội đồng khoa học.#{'  '}
+        *Ví dụ:* “Kết quả thu được phản ánh mối tương quan chặt chẽ giữa A và B, qua đó củng cố giả thuyết ban đầu.”
+      TEXT
+    end
+
+    if down.include?("motivational")
+      return <<~TEXT
+        ⚡ **TONE: MOTIVATIONAL (THỦ LĨNH TRUYỀN LỬA)**#{'  '}
+        Mỗi câu phải như cú đấm tinh thần.#{'  '}
+        Dùng động từ mạnh, nhịp dồn dập, câu ngắn, nhiều năng lượng.#{'  '}
+        Có thể kèm emoji 💪🔥 để tăng sức hút.#{'  '}
+        *Ví dụ:* “Đứng dậy đi! Mỗi cú ngã chỉ là bàn đạp cho cú bật tiếp theo! Không ai cản nổi người không biết bỏ cuộc!”
+      TEXT
+    end
+
+    t
   end
-
-  if down.include?("friendly")
-    return <<~TEXT
-      🤗 **TONE: FRIENDLY (BẠN ĐỜI ĐÁNG YÊU)**  
-      Tự nhiên, vui vẻ, chèn vài emoji vừa phải.  
-      Cảm giác như người bạn nói chuyện mỗi chiều cà phê.  
-      Có thể đùa nhẹ, nhưng luôn giữ lịch sự và thiện chí.  
-      *Ví dụ:* “Ôi, cái này hay lắm á 😄 để mình chỉ bạn cách làm nhé!”
-    TEXT
-  end
-
-  if down.include?("banter")
-    return <<~TEXT
-      💥 **TONE: BANTER (BỐ LÁO CÓ TRÌNH, GẮT MÀ VẪN THÂN)**  
-      Nói kiểu anh em trong team cà khịa nhau cho tỉnh người.  
-      Giọng bố đời nhẹ, không cần to tiếng — câu nào nói ra cũng có sức nặng, nghe xong là biết thân ai phận nấy.  
-      Thẳng, tự tin, đôi khi hơi khinh nhẹ cho vui, nhưng không bao giờ mất dạy.  
-      *Ví dụ:* “Ủa ông push kiểu này mà CI chưa bỏ việc hả, respect đó nha 😏.”  
-      Hay: “Nhìn commit ông mà tôi muốn rollback cả team luôn á.”  
-      **Chất:** bold, sharp, confident, brotherly — hỗn đúng liều, duyên đúng chỗ.
-    TEXT
-  end
-
-  if down.include?("anime")
-    return <<~TEXT
-      🌸 **TONE: ANIME / WIBU (ĐÁNG YÊU NỔI LOẠN)**  
-      Biểu cảm mạnh, dùng tượng thanh tự nhiên: “yaa~”, “nè~”, “desu~”.  
-      Luôn tươi sáng, hồn nhiên, cảm xúc phóng đại 120%.  
-      Có thể mix tiếng Việt – Nhật cho vui nhưng không làm lố.  
-      *Ví dụ:* “Ganbatte~ nè! Cậu làm được đó, đừng bỏ cuộc nhaaa 💪🌈!”
-    TEXT
-  end
-
-  if down.include?("academic")
-    return <<~TEXT
-      📚 **TONE: ACADEMIC (LÝ LUẬN SẮC NHƯ DAO CẠO)**  
-      Dẫn chứng, phân tích, lập luận logic từng câu.  
-      Không cảm xúc thừa, không emoji.  
-      Viết như thể đang trình bày trước hội đồng khoa học.  
-      *Ví dụ:* “Kết quả thu được phản ánh mối tương quan chặt chẽ giữa A và B, qua đó củng cố giả thuyết ban đầu.”
-    TEXT
-  end
-
-  if down.include?("motivational")
-    return <<~TEXT
-      ⚡ **TONE: MOTIVATIONAL (THỦ LĨNH TRUYỀN LỬA)**  
-      Mỗi câu phải như cú đấm tinh thần.  
-      Dùng động từ mạnh, nhịp dồn dập, câu ngắn, nhiều năng lượng.  
-      Có thể kèm emoji 💪🔥 để tăng sức hút.  
-      *Ví dụ:* “Đứng dậy đi! Mỗi cú ngã chỉ là bàn đạp cho cú bật tiếp theo! Không ai cản nổi người không biết bỏ cuộc!”
-    TEXT
-  end
-
-  t
-end
-
 
   def convert_messages_to_gemini_format(messages)
     return [] if messages.blank?
@@ -299,11 +298,11 @@ end
 
     {
       requiredFinalScore: can_pass ? required_score : nil,
-      canPass:           can_pass,
-      formula:           "Điểm thi cần = (Điểm tối thiểu - Điểm hiện tại) / Trọng số cuối kỳ",
-      partialScore:      round_to_2_decimals(partial_score),
-      finalExamWeight:   final_exam_weight,
-      minPassingScore:   min_passing_score,
+      canPass:            can_pass,
+      formula:            "Điểm thi cần = (Điểm tối thiểu - Điểm hiện tại) / Trọng số cuối kỳ",
+      partialScore:       round_to_2_decimals(partial_score),
+      finalExamWeight:    final_exam_weight,
+      minPassingScore:    min_passing_score,
     }
   end
   # rubocop:enable Metrics/MethodLength
