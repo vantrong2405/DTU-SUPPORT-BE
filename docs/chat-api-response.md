@@ -96,10 +96,13 @@ Khi client gọi `POST /api/chat`, backend sẽ trả về response theo format 
     - `"calculateTargetGpa"`
     - `"calculateSimulationGpa"`
     - `"calculatePeGpa"`
+    - `"calculateRequiredFinalScore"`
+    - `"calculateFinalScore"`
   - `data` (object): Kết quả từ tool execution
   - `uiComponent` (string): Tên component FE nên render
     - `"GpaResultCard"` cho calculateTargetGpa, calculateSimulationGpa
     - `"PeResultCard"` cho calculatePeGpa
+    - `"FinalScoreResultCard"` cho calculateRequiredFinalScore, calculateFinalScore
 
 ### `metadata` (object, required)
 - Thông tin metadata
@@ -166,6 +169,83 @@ Khi client gọi `POST /api/chat`, backend sẽ trả về response theo format 
 }
 ```
 
+### Tool: `calculateRequiredFinalScore`
+
+**Mục đích:** Tính điểm thi cuối kỳ tối thiểu cần đạt để qua môn.
+
+**Response:**
+
+```json
+{
+  "toolName": "calculateRequiredFinalScore",
+  "data": {
+    "requiredFinalScore": 1.43,
+    "canPass": true,
+    "formula": "Điểm thi cần = (Điểm tối thiểu - Điểm hiện tại) / Trọng số cuối kỳ",
+    "partialScore": 3.9,
+    "finalExamWeight": 50.0,
+    "minPassingScore": 4.0
+  },
+  "uiComponent": "FinalScoreResultCard"
+}
+```
+
+**Chi tiết các trường:**
+- `requiredFinalScore` (number | null): Điểm thi cuối kỳ tối thiểu cần đạt (thang 10). `null` nếu không thể qua môn.
+- `canPass` (boolean): `true` nếu có thể qua môn, `false` nếu không thể (ngay cả khi đạt 10.0).
+- `formula` (string): Công thức tính điểm thi cần.
+- `partialScore` (number): Tổng điểm phần đã có từ các thành phần (thang 10, làm tròn 2 chữ số).
+- `finalExamWeight` (number): Trọng số thi cuối kỳ (%).
+- `minPassingScore` (number): Điểm tối thiểu để qua môn (thang 10, thường là 4.0).
+
+**Lưu ý:** `requiredFinalScore` tối thiểu là 1.0 (theo quy định trường).
+
+### Tool: `calculateFinalScore`
+
+**Mục đích:** Tính điểm tổng kết và xếp loại khi biết điểm thi cuối kỳ (dự đoán điểm tổng kết).
+
+**Response:**
+
+```json
+{
+  "toolName": "calculateFinalScore",
+  "data": {
+    "finalScore": 7.9,
+    "finalScoreGpa": 3.33,
+    "letterGrade": "B+",
+    "isPass": true,
+    "partialScore": 3.9,
+    "finalExamScore": 8.0,
+    "finalExamWeight": 50.0,
+    "minPassingScore": 4.0
+  },
+  "uiComponent": "FinalScoreResultCard"
+}
+```
+
+**Chi tiết các trường:**
+- `finalScore` (number): Điểm tổng kết (thang 10, làm tròn 2 chữ số).
+- `finalScoreGpa` (number): Điểm tổng kết quy đổi sang thang 4 (làm tròn 2 chữ số).
+- `letterGrade` (string): Điểm chữ theo thang điểm Duy Tân: `"A+"`, `"A"`, `"A-"`, `"B+"`, `"B"`, `"B-"`, `"C+"`, `"C"`, `"C-"`, `"D"`, `"F"`.
+- `isPass` (boolean): `true` nếu đạt môn (≥ `minPassingScore`), `false` nếu không đạt.
+- `partialScore` (number): Tổng điểm phần đã có trước khi thi cuối kỳ (thang 10, làm tròn 2 chữ số).
+- `finalExamScore` (number): Điểm thi cuối kỳ đã nhập (thang 10).
+- `finalExamWeight` (number): Trọng số thi cuối kỳ (%).
+- `minPassingScore` (number): Điểm tối thiểu để qua môn (thang 10, thường là 4.0).
+
+**Bảng quy đổi điểm chữ (theo thang điểm Duy Tân):**
+- `9.5 - 10.0` → `"A+"` (GPA 4.0)
+- `8.5 - 9.4` → `"A"` (GPA 4.0)
+- `8.0 - 8.4` → `"A-"` (GPA 3.65)
+- `7.5 - 7.9` → `"B+"` (GPA 3.33)
+- `7.0 - 7.4` → `"B"` (GPA 3.0)
+- `6.5 - 6.9` → `"B-"` (GPA 2.65)
+- `6.0 - 6.4` → `"C+"` (GPA 2.33)
+- `5.5 - 5.9` → `"C"` (GPA 2.0)
+- `4.5 - 5.4` → `"C-"` (GPA 1.65)
+- `4.0 - 4.4` → `"D"` (GPA 1.0)
+- `0.0 - 3.9` → `"F"` (GPA 0.0) - Không đạt
+
 ## 🎯 Cách Client Sử Dụng
 
 ### TypeScript Interface (Frontend)
@@ -175,9 +255,9 @@ interface ChatResponse {
   data: {
     content: string
     toolResult?: {
-      toolName: "calculateTargetGpa" | "calculateSimulationGpa" | "calculatePeGpa"
+      toolName: "calculateTargetGpa" | "calculateSimulationGpa" | "calculatePeGpa" | "calculateRequiredFinalScore" | "calculateFinalScore"
       data: Record<string, unknown>
-      uiComponent: "GpaResultCard" | "PeResultCard"
+      uiComponent: "GpaResultCard" | "PeResultCard" | "FinalScoreResultCard"
     }
     metadata: {
       messageId: string
@@ -251,6 +331,8 @@ if (data.data) {
       renderGpaResultCard(toolData)
     } else if (uiComponent === 'PeResultCard') {
       renderPeResultCard(toolData)
+    } else if (uiComponent === 'FinalScoreResultCard') {
+      renderFinalScoreResultCard(toolData)
     }
   }
 } else if (data.errors) {

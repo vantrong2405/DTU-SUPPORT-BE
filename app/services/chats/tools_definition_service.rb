@@ -2,7 +2,7 @@
 
 class Chats::ToolsDefinitionService
   def call
-    [{ functionDeclarations: [target_gpa_tool, simulation_gpa_tool, pe_gpa_tool] }]
+    [{ functionDeclarations: [target_gpa_tool, simulation_gpa_tool, pe_gpa_tool, required_final_score_tool, final_score_tool] }]
   end
 
   private
@@ -68,4 +68,74 @@ class Chats::ToolsDefinitionService
       required:    %w[pe1 pe2 pe3],
     )
   end
+
+  # rubocop:disable Metrics/MethodLength
+  def required_final_score_tool
+    build_tool(
+      name:        "calculateRequiredFinalScore",
+      description: "Tính điểm thi cuối kỳ tối thiểu cần đạt để qua môn dựa trên điểm thành phần hiện có và trọng số",
+      properties:  {
+        components: {
+          type:        "ARRAY",
+          description: "Mảng các thành phần điểm đã có (chuyên cần, giữa kỳ, đồ án, sáng tạo, v.v.)",
+          items:       {
+            type:       "OBJECT",
+            properties: {
+              name:   { type: "STRING", description: "Tên thành phần (ví dụ: 'Chuyên cần', 'Giữa kỳ')" },
+              weight: { type: "NUMBER", description: "Trọng số của thành phần (%)" },
+              score:  { type: "NUMBER", description: "Điểm đạt được của thành phần (0-10)" },
+            },
+            required:    %w[name weight score],
+          },
+        },
+        finalExamWeight: {
+          type:        "NUMBER",
+          description: "Trọng số của điểm thi cuối kỳ (%)",
+        },
+        minPassingScore: {
+          type:        "NUMBER",
+          description: "Điểm tối thiểu để qua môn (thang 10, thường là 4.0)",
+        },
+      },
+      required:    %w[components finalExamWeight minPassingScore],
+    )
+  end
+  # rubocop:enable Metrics/MethodLength
+
+  # rubocop:disable Metrics/MethodLength
+  def final_score_tool
+    build_tool(
+      name:        "calculateFinalScore",
+      description: "Tính điểm tổng kết và xếp loại khi biết điểm thi cuối kỳ (dự đoán điểm tổng kết)",
+      properties:  {
+        components: {
+          type:        "ARRAY",
+          description: "Mảng các thành phần điểm đã có (chuyên cần, giữa kỳ, đồ án, sáng tạo, v.v.)",
+          items:       {
+            type:       "OBJECT",
+            properties: {
+              name:   { type: "STRING", description: "Tên thành phần (ví dụ: 'Chuyên cần', 'Giữa kỳ')" },
+              weight: { type: "NUMBER", description: "Trọng số của thành phần (%)" },
+              score:  { type: "NUMBER", description: "Điểm đạt được của thành phần (0-10)" },
+            },
+            required:    %w[name weight score],
+          },
+        },
+        finalExamWeight: {
+          type:        "NUMBER",
+          description: "Trọng số của điểm thi cuối kỳ (%)",
+        },
+        finalExamScore: {
+          type:        "NUMBER",
+          description: "Điểm thi cuối kỳ (0-10)",
+        },
+        minPassingScore: {
+          type:        "NUMBER",
+          description: "Điểm tối thiểu để qua môn (thang 10, thường là 4.0)",
+        },
+      },
+      required:    %w[components finalExamWeight finalExamScore minPassingScore],
+    )
+  end
+  # rubocop:enable Metrics/MethodLength
 end

@@ -7,9 +7,11 @@ class Chats::ProcessMessageService < BaseService
   TOP_K = 1
   DEFAULT_TONE = "Thân thiện, chuyên nghiệp, súc tích"
   UI_COMPONENTS = {
-    "calculateTargetGpa"     => "GpaResultCard",
-    "calculateSimulationGpa" => "GpaResultCard",
-    "calculatePeGpa"         => "PeResultCard",
+    "calculateTargetGpa"           => "GpaResultCard",
+    "calculateSimulationGpa"       => "GpaResultCard",
+    "calculatePeGpa"              => "PeResultCard",
+    "calculateRequiredFinalScore" => "FinalScoreResultCard",
+    "calculateFinalScore"          => "FinalScoreResultCard",
   }.freeze
 
   GRADE_POINTS = {
@@ -25,6 +27,14 @@ class Chats::ProcessMessageService < BaseService
     "C+" => "C+", "C" => "C", "C-" => "C−",
     "D" => "D", "F" => "F",
   }.freeze
+
+  SCORE_TO_LETTER = {
+    (9.5..10.0) => "A+", (8.5..9.4) => "A", (8.0..8.4) => "A-",
+    (7.5..7.9) => "B+", (7.0..7.4) => "B", (6.5..6.9) => "B-",
+    (6.0..6.4) => "C+", (5.5..5.9) => "C", (4.5..5.4) => "C-",
+    (4.0..4.4) => "D", (0.0..3.9) => "F",
+  }.freeze
+
   def initialize(messages:, tone: nil)
     super()
     @messages = messages
@@ -128,12 +138,13 @@ code: "empty_model_output", }
 
   if down.include?("banter")
     return <<~TEXT
-      🔥 **TONE: BANTER (CÀ KHỊA NGUY HIỂM, MẶN NHƯ BIỂN CHẾT)**  
-      Mất dạy, tốc độ, đâm mà không đau — chỉ để người ta bật cười.  
-      Có thể châm chọc nhẹ, pha tí tự tin kiểu “tôi biết tôi giỏi”.  
-      Tuyệt đối không xúc phạm, không body shaming, không động đến cá nhân/nhóm.  
-      *Ví dụ:* “Ủa, định debug bằng niềm tin hả? 😏 Mạnh dạn chạy lại đi bạn ơi.”  
-      **Chất:** witty, confident, quick.
+      💥 **TONE: BANTER (BỐ LÁO CÓ TRÌNH, GẮT MÀ VẪN THÂN)**  
+      Nói kiểu anh em trong team cà khịa nhau cho tỉnh người.  
+      Giọng bố đời nhẹ, không cần to tiếng — câu nào nói ra cũng có sức nặng, nghe xong là biết thân ai phận nấy.  
+      Thẳng, tự tin, đôi khi hơi khinh nhẹ cho vui, nhưng không bao giờ mất dạy.  
+      *Ví dụ:* “Ủa ông push kiểu này mà CI chưa bỏ việc hả, respect đó nha 😏.”  
+      Hay: “Nhìn commit ông mà tôi muốn rollback cả team luôn á.”  
+      **Chất:** bold, sharp, confident, brotherly — hỗn đúng liều, duyên đúng chỗ.
     TEXT
   end
 
@@ -190,6 +201,8 @@ end
     when "calculateTargetGpa" then execute_calculate_target_gpa(tool_args)
     when "calculateSimulationGpa" then execute_calculate_simulation_gpa(tool_args)
     when "calculatePeGpa" then execute_calculate_pe_gpa(tool_args)
+    when "calculateRequiredFinalScore" then execute_calculate_required_final_score(tool_args)
+    when "calculateFinalScore" then execute_calculate_final_score(tool_args)
     else { error: "Tool #{tool_name} not implemented yet" }
     end
   end
@@ -260,6 +273,77 @@ end
     }
   end
 
+  # rubocop:disable Metrics/MethodLength
+  def execute_calculate_required_final_score(args)
+    components = args["components"] || []
+    final_exam_weight = args["finalExamWeight"].to_f
+    min_passing_score = args["minPassingScore"].to_f
+
+    # Validate tổng trọng số = 100%
+    total_weight = components.sum { |c| c["weight"].to_f } + final_exam_weight
+    return { error: "Tổng trọng số phải bằng 100%" } unless (99.9..100.1).cover?(total_weight)
+
+    # Tính điểm phần đã có (theo %)
+    partial_score = components.sum { |c| c["score"].to_f * c["weight"].to_f / 100.0 }
+
+    # Tính điểm thi cần để qua môn
+    # Điểm_tổng_kết = partialScore + (finalExamScore × finalExamWeight / 100) >= minPassingScore
+    # => finalExamScore >= (minPassingScore - partialScore) / (finalExamWeight / 100)
+    required_score = (min_passing_score - partial_score) / (final_exam_weight / 100.0)
+
+    # Quy định tối thiểu 1.0 điểm cuối kỳ
+    required_score = [required_score, 1.0].max.round(2)
+
+    # Kiểm tra có thể qua môn không
+    can_pass = required_score <= 10.0
+
+    {
+      requiredFinalScore: can_pass ? required_score : nil,
+      canPass:           can_pass,
+      formula:           "Điểm thi cần = (Điểm tối thiểu - Điểm hiện tại) / Trọng số cuối kỳ",
+      partialScore:      round_to_2_decimals(partial_score),
+      finalExamWeight:   final_exam_weight,
+      minPassingScore:   min_passing_score,
+    }
+  end
+  # rubocop:enable Metrics/MethodLength
+
+  # rubocop:disable Metrics/MethodLength
+  def execute_calculate_final_score(args)
+    components = args["components"] || []
+    final_exam_weight = args["finalExamWeight"].to_f
+    final_exam_score = args["finalExamScore"].to_f
+    min_passing_score = args["minPassingScore"].to_f
+
+    # Validate tổng trọng số = 100%
+    total_weight = components.sum { |c| c["weight"].to_f } + final_exam_weight
+    return { error: "Tổng trọng số phải bằng 100%" } unless (99.9..100.1).cover?(total_weight)
+
+    # Tính điểm phần đã có (theo %)
+    partial_score = components.sum { |c| c["score"].to_f * c["weight"].to_f / 100.0 }
+
+    # Tính điểm tổng kết
+    final_score = partial_score + (final_exam_score * final_exam_weight / 100.0)
+    final_score_rounded = round_to_2_decimals(final_score)
+
+    # Quy đổi sang điểm chữ và thang 4
+    letter_grade = convert_score_to_letter(final_score)
+    gpa_4_scale = get_grade_point(letter_grade)
+    is_pass = final_score >= min_passing_score
+
+    {
+      finalScore:      final_score_rounded,
+      finalScoreGpa:   round_to_2_decimals(gpa_4_scale),
+      letterGrade:     letter_grade,
+      isPass:          is_pass,
+      partialScore:    round_to_2_decimals(partial_score),
+      finalExamScore:  final_exam_score,
+      finalExamWeight: final_exam_weight,
+      minPassingScore: min_passing_score,
+    }
+  end
+  # rubocop:enable Metrics/MethodLength
+
   def get_graduation_classification(gpa)
     return { rank: "excellent", minGpa: 3.60, maxGpa: 4.00 } if (3.60..4.00).cover?(gpa)
     return { rank: "good", minGpa: 3.20, maxGpa: 3.59 } if (3.20...3.60).cover?(gpa)
@@ -278,6 +362,22 @@ end
 
   def round_to_3_decimals(value)
     (value * 1000).round / 1000.0
+  end
+
+  def round_to_2_decimals(value)
+    (value * 100).round / 100.0
+  end
+
+  def convert_score_to_letter(score)
+    SCORE_TO_LETTER.each do |range, letter|
+      return letter if range.cover?(score)
+    end
+    "F"
+  end
+
+  def convert_score_to_gpa(score)
+    letter_grade = convert_score_to_letter(score)
+    get_grade_point(letter_grade)
   end
 
   def get_ui_component(tool_name)
