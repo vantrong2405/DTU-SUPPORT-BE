@@ -1,3 +1,17 @@
+# RuboCop configuration for UI renderers (long HTML strings allowed)
+
+Metrics/MethodLength:
+  Exclude:
+    - 'app/services/chats/ui_renderers/**/*.rb'
+
+Naming/VariableNumber:
+  Exclude:
+    - 'app/services/chats/ui_renderers/**/*.rb'
+
+Layout/LineLength:
+  Exclude:
+    - 'app/services/chats/ui_renderers/**/*.rb'
+
 # rubocop-rails-omakase automatically includes necessary plugins
 # No need to require additional plugins
 

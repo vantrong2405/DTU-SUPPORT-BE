@@ -11,7 +11,7 @@ Khi client gọi `POST /api/chat`, backend sẽ trả về response theo format 
 2. ChatsController → Chats::ProcessMessageService.call(messages:, tone:)
 3. Service → Gọi Gemini API với tools definition
 4. Nếu có function_call → Execute tool → Gửi tool_result về Gemini → Nhận final response
-5. Service → Trả về { success, content, tool_result, metadata }
+5. Service → Trả về { success, content, tool_result, metadata } (tool_result có thể kèm uiHtml)
 6. Controller → render_success(data: { content, toolResult, metadata })
 7. Client ← JSON Response
 ```
@@ -37,7 +37,7 @@ Khi client gọi `POST /api/chat`, backend sẽ trả về response theo format 
           "maxGpa": 3.59
         }
       },
-      "uiComponent": "GpaResultCard"
+      "uiHtml": "<div class=\"rounded-lg border p-4 bg-white dark:bg-zinc-900\">...</div>"
     },
     "metadata": {
       "messageId": "msg-1720170000-1234",
@@ -93,16 +93,8 @@ Khi client gọi `POST /api/chat`, backend sẽ trả về response theo format 
 - Chỉ có khi Gemini gọi function/tool
 - Cấu trúc:
   - `toolName` (string): Tên tool được gọi
-    - `"calculateTargetGpa"`
-    - `"calculateSimulationGpa"`
-    - `"calculatePeGpa"`
-    - `"calculateRequiredFinalScore"`
-    - `"calculateFinalScore"`
   - `data` (object): Kết quả từ tool execution
-  - `uiComponent` (string): Tên component FE nên render
-    - `"GpaResultCard"` cho calculateTargetGpa, calculateSimulationGpa
-    - `"PeResultCard"` cho calculatePeGpa
-    - `"FinalScoreResultCard"` cho calculateRequiredFinalScore, calculateFinalScore
+  - `uiHtml` (string, optional): HTML Tailwind đã render sẵn; FE render trực tiếp nếu có
 
 ### `metadata` (object, required)
 - Thông tin metadata
@@ -126,7 +118,7 @@ Khi client gọi `POST /api/chat`, backend sẽ trả về response theo format 
       "maxGpa": 3.59
     }
   },
-  "uiComponent": "GpaResultCard"
+  "uiHtml": "<div class=\"rounded-lg border p-4 bg-white dark:bg-zinc-900\">...Tailwind content...</div>"
 }
 ```
 
@@ -147,7 +139,7 @@ Khi client gọi `POST /api/chat`, backend sẽ trả về response theo format 
     "distributionSummary": "5 tín A+, 10 tín A, 5 tín A−, 10 tín B+, 10 tín B, 5 tín B−, 5 tín C+, 5 tín C, 3 tín C−, 2 tín D",
     "isWeakResult": false
   },
-  "uiComponent": "GpaResultCard"
+  "uiHtml": "<div class=\"rounded-lg border p-4 bg-white dark:bg-zinc-900\">...Tailwind content...</div>"
 }
 ```
 
@@ -165,7 +157,7 @@ Khi client gọi `POST /api/chat`, backend sẽ trả về response theo format 
       "pe3": 9.0
     }
   },
-  "uiComponent": "PeResultCard"
+  "uiHtml": "<div class=\"rounded-lg border p-4 bg-white dark:bg-zinc-900\">...Tailwind content...</div>"
 }
 ```
 
@@ -186,7 +178,7 @@ Khi client gọi `POST /api/chat`, backend sẽ trả về response theo format 
     "finalExamWeight": 50.0,
     "minPassingScore": 4.0
   },
-  "uiComponent": "FinalScoreResultCard"
+  "uiHtml": "<div class=\"rounded-lg border p-4 bg-white dark:bg-zinc-900\">...Tailwind content...</div>"
 }
 ```
 
@@ -256,8 +248,8 @@ interface ChatResponse {
     content: string
     toolResult?: {
       toolName: "calculateTargetGpa" | "calculateSimulationGpa" | "calculatePeGpa" | "calculateRequiredFinalScore" | "calculateFinalScore"
-      data: Record<string, unknown>
-      uiComponent: "GpaResultCard" | "PeResultCard" | "FinalScoreResultCard"
+      data?: Record<string, unknown>
+      uiHtml?: string
     }
     metadata: {
       messageId: string
@@ -322,18 +314,9 @@ if (data.data) {
   // Hiển thị text response
   console.log(data.data.content)
 
-  // Nếu có toolResult, render rich UI component
-  if (data.data.toolResult) {
-    const { toolName, data: toolData, uiComponent } = data.data.toolResult
-
-    // Render component tương ứng
-    if (uiComponent === 'GpaResultCard') {
-      renderGpaResultCard(toolData)
-    } else if (uiComponent === 'PeResultCard') {
-      renderPeResultCard(toolData)
-    } else if (uiComponent === 'FinalScoreResultCard') {
-      renderFinalScoreResultCard(toolData)
-    }
+  // Nếu có toolResult.uiHtml → render trực tiếp
+  if (data.data.toolResult?.uiHtml) {
+    renderHtml(data.data.toolResult.uiHtml)
   }
 } else if (data.errors) {
   // Xử lý lỗi

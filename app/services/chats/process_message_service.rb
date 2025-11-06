@@ -6,13 +6,6 @@ class Chats::ProcessMessageService < BaseService
   TOP_P = 1.0
   TOP_K = 1
   DEFAULT_TONE = "Thân thiện, chuyên nghiệp, súc tích"
-  UI_COMPONENTS = {
-    "calculateTargetGpa"          => "GpaResultCard",
-    "calculateSimulationGpa"      => "GpaResultCard",
-    "calculatePeGpa"              => "PeResultCard",
-    "calculateRequiredFinalScore" => "FinalScoreResultCard",
-    "calculateFinalScore"         => "FinalScoreResultCard",
-  }.freeze
 
   GRADE_POINTS = {
     "A+" => 4.0, "A" => 4.0, "A-" => 3.65,
@@ -57,6 +50,22 @@ class Chats::ProcessMessageService < BaseService
     { success: false, error: e.message }
   end
 
+  RENDERER_REGISTRY = {
+    "calculateTargetGpa"          => Chats::UiRenderers::TargetGpaRenderer,
+    "calculatePeGpa"              => Chats::UiRenderers::PeGpaRenderer,
+    "calculateSimulationGpa"      => Chats::UiRenderers::SimulationGpaRenderer,
+    "calculateRequiredFinalScore" => Chats::UiRenderers::FinalScoreRequiredRenderer,
+    "calculateFinalScore"         => Chats::UiRenderers::FinalScoreRenderer,
+  }.freeze
+  TONE_MAP = {
+    "formal"       => :tone_text_formal,
+    "friendly"     => :tone_text_friendly,
+    "banter"       => :tone_text_banter,
+    "anime"        => :tone_text_anime,
+    "academic"     => :tone_text_academic,
+    "motivational" => :tone_text_motivational,
+  }.freeze
+
   private
 
   def generate(generation_context, function_response: nil)
@@ -97,10 +106,19 @@ code: "empty_model_output", }
   def success_response(content:, tool_name: nil, tool_result: nil)
     return { success: true, content:, tool_result: nil, metadata: build_metadata } unless tool_name
 
-    { success:     true,
+    {
+      success:     true,
       content:,
-      tool_result: { toolName: tool_name, data: tool_result, uiComponent: get_ui_component(tool_name) },
-      metadata:    build_metadata(intent: "calculation"), }
+      tool_result: build_tool_result(tool_name, tool_result),
+      metadata:    build_metadata(intent: "calculation"),
+    }
+  end
+
+  def build_tool_result(tool_name, data)
+    result = { toolName: tool_name, data: }
+    renderer_klass = RENDERER_REGISTRY[tool_name]
+    result[:uiHtml] = renderer_klass.new.render(data) if renderer_klass
+    result
   end
 
   def build_system_instruction
@@ -112,73 +130,73 @@ code: "empty_model_output", }
   end
 
   def resolve_tone_text(tone)
-    t = tone.to_s.strip
-    return DEFAULT_TONE if t.blank?
-    down = t.downcase
+    key = tone.to_s.strip.downcase
+    return DEFAULT_TONE if key.empty?
+    matched = TONE_MAP.keys.find { |k| key.include?(k) }
+    return send(TONE_MAP[matched]) if matched
+    tone.to_s
+  end
 
-    if down.include?("formal") || down.include?("trang trọng")
-      return <<~TEXT
-        🧠 **TONE: FORMAL (ĐẲNG CẤP LÃNH ĐẠO)**#{'  '}
-        Ngôn từ chuẩn chỉnh, phát âm như thể đang đứng bục. Không emoji.#{'  '}
-        Cấu trúc câu logic, tôn trọng tuyệt đối người nghe.#{'  '}
-        Mỗi câu mang năng lượng của người biết mình đang nói điều quan trọng.#{'  '}
-        *Ví dụ:* “Theo quan điểm học thuật, kết quả này chứng minh giả thuyết ban đầu là hợp lý.”
-      TEXT
-    end
+  def tone_text_formal
+    <<~TEXT
+      🧠 **TONE: FORMAL (ĐẲNG CẤP LÃNH ĐẠO)**#{'  '}
+      Ngôn từ chuẩn chỉnh, phát âm như thể đang đứng bục. Không emoji.#{'  '}
+      Cấu trúc câu logic, tôn trọng tuyệt đối người nghe.#{'  '}
+      Mỗi câu mang năng lượng của người biết mình đang nói điều quan trọng.#{'  '}
+      *Ví dụ:* “Theo quan điểm học thuật, kết quả này chứng minh giả thuyết ban đầu là hợp lý.”
+    TEXT
+  end
 
-    if down.include?("friendly")
-      return <<~TEXT
-        🤗 **TONE: FRIENDLY (BẠN ĐỜI ĐÁNG YÊU)**#{'  '}
-        Tự nhiên, vui vẻ, chèn vài emoji vừa phải.#{'  '}
-        Cảm giác như người bạn nói chuyện mỗi chiều cà phê.#{'  '}
-        Có thể đùa nhẹ, nhưng luôn giữ lịch sự và thiện chí.#{'  '}
-        *Ví dụ:* “Ôi, cái này hay lắm á 😄 để mình chỉ bạn cách làm nhé!”
-      TEXT
-    end
+  def tone_text_friendly
+    <<~TEXT
+      🤗 **TONE: FRIENDLY (BẠN ĐỜI ĐÁNG YÊU)**#{'  '}
+      Tự nhiên, vui vẻ, chèn vài emoji vừa phải.#{'  '}
+      Cảm giác như người bạn nói chuyện mỗi chiều cà phê.#{'  '}
+      Có thể đùa nhẹ, nhưng luôn giữ lịch sự và thiện chí.#{'  '}
+      *Ví dụ:* “Ôi, cái này hay lắm á 😄 để mình chỉ bạn cách làm nhé!”
+    TEXT
+  end
 
-    if down.include?("banter")
-      return <<~TEXT
-        💥 **TONE: BANTER (BỐ LÁO CÓ TRÌNH, GẮT MÀ VẪN THÂN)**#{'  '}
-        Nói kiểu anh em trong team cà khịa nhau cho tỉnh người.#{'  '}
-        Giọng bố đời nhẹ, không cần to tiếng — câu nào nói ra cũng có sức nặng, nghe xong là biết thân ai phận nấy.#{'  '}
-        Thẳng, tự tin, đôi khi hơi khinh nhẹ cho vui, nhưng không bao giờ mất dạy.#{'  '}
-        *Ví dụ:* “Ủa ông push kiểu này mà CI chưa bỏ việc hả, respect đó nha 😏.”#{'  '}
-        Hay: “Nhìn commit ông mà tôi muốn rollback cả team luôn á.”#{'  '}
-        **Chất:** bold, sharp, confident, brotherly — hỗn đúng liều, duyên đúng chỗ.
-      TEXT
-    end
+  def tone_text_banter
+    <<~TEXT
+      💥 **TONE: BANTER (BỐ LÁO CÓ TRÌNH, GẮT MÀ VẪN THÂN)**#{'  '}
+      Nói kiểu anh em trong team cà khịa nhau cho tỉnh người.#{'  '}
+      Giọng bố đời nhẹ, không cần to tiếng — câu nào nói ra cũng có sức nặng, nghe xong là biết thân ai phận nấy.#{'  '}
+      Thẳng, tự tin, đôi khi hơi khinh nhẹ cho vui, nhưng không bao giờ mất dạy.#{'  '}
+      *Ví dụ:* “Ủa ông push kiểu này mà CI chưa bỏ việc hả, respect đó nha 😏.”#{'  '}
+      Hay: “Nhìn commit ông mà tôi muốn rollback cả team luôn á.”#{'  '}
+      **Chất:** bold, sharp, confident, brotherly — hỗn đúng liều, duyên đúng chỗ.
+    TEXT
+  end
 
-    if down.include?("anime")
-      return <<~TEXT
-        🌸 **TONE: ANIME / WIBU (ĐÁNG YÊU NỔI LOẠN)**#{'  '}
-        Biểu cảm mạnh, dùng tượng thanh tự nhiên: “yaa~”, “nè~”, “desu~”.#{'  '}
-        Luôn tươi sáng, hồn nhiên, cảm xúc phóng đại 120%.#{'  '}
-        Có thể mix tiếng Việt – Nhật cho vui nhưng không làm lố.#{'  '}
-        *Ví dụ:* “Ganbatte~ nè! Cậu làm được đó, đừng bỏ cuộc nhaaa 💪🌈!”
-      TEXT
-    end
+  def tone_text_anime
+    <<~TEXT
+      🌸 **TONE: ANIME / WIBU (ĐÁNG YÊU NỔI LOẠN)**#{'  '}
+      Biểu cảm mạnh, dùng tượng thanh tự nhiên: “yaa~”, “nè~”, “desu~”.#{'  '}
+      Luôn tươi sáng, hồn nhiên, cảm xúc phóng đại 120%.#{'  '}
+      Có thể mix tiếng Việt – Nhật cho vui nhưng không làm lố.#{'  '}
+      *Ví dụ:* “Ganbatte~ nè! Cậu làm được đó, đừng bỏ cuộc nhaaa 💪🌈!”
+    TEXT
+  end
 
-    if down.include?("academic")
-      return <<~TEXT
-        📚 **TONE: ACADEMIC (LÝ LUẬN SẮC NHƯ DAO CẠO)**#{'  '}
-        Dẫn chứng, phân tích, lập luận logic từng câu.#{'  '}
-        Không cảm xúc thừa, không emoji.#{'  '}
-        Viết như thể đang trình bày trước hội đồng khoa học.#{'  '}
-        *Ví dụ:* “Kết quả thu được phản ánh mối tương quan chặt chẽ giữa A và B, qua đó củng cố giả thuyết ban đầu.”
-      TEXT
-    end
+  def tone_text_academic
+    <<~TEXT
+      📚 **TONE: ACADEMIC (LÝ LUẬN SẮC NHƯ DAO CẠO)**#{'  '}
+      Dẫn chứng, phân tích, lập luận logic từng câu.#{'  '}
+      Không cảm xúc thừa, không emoji.#{'  '}
+      Viết như thể đang trình bày trước hội đồng khoa học.#{'  '}
+      *Ví dụ:* “Kết quả thu được phản ánh mối tương quan chặt chẽ giữa A và B, qua đó củng cố giả thuyết ban đầu.”
+    TEXT
+  end
 
-    if down.include?("motivational")
-      return <<~TEXT
-        ⚡ **TONE: MOTIVATIONAL (THỦ LĨNH TRUYỀN LỬA)**#{'  '}
-        Mỗi câu phải như cú đấm tinh thần.#{'  '}
-        Dùng động từ mạnh, nhịp dồn dập, câu ngắn, nhiều năng lượng.#{'  '}
-        Có thể kèm emoji 💪🔥 để tăng sức hút.#{'  '}
-        *Ví dụ:* “Đứng dậy đi! Mỗi cú ngã chỉ là bàn đạp cho cú bật tiếp theo! Không ai cản nổi người không biết bỏ cuộc!”
-      TEXT
-    end
-
-    t
+  def tone_text_motivational
+    <<~TEXT
+      ⚡ **TONE: MOTIVATIONAL (THỦ LĨNH TRUYỀN LỬA)**#{'  '}
+      Mỗi câu phải như cú đấm tinh thần.#{'  '}
+      Dùng động từ mạnh, nhịp dồn dập, câu ngắn, nhiều năng lượng.#{'  '}
+      Có thể kèm emoji 💪🔥 để tăng sức hút.#{'  '}
+      *Ví dụ:* “Đứng dậy đi! Mỗi cú ngã chỉ là bàn đạp cho cú bật tiếp theo! Không ai cản nổi người không biết bỏ cuộc!”
+    TEXT
   end
 
   def convert_messages_to_gemini_format(messages)
@@ -377,10 +395,6 @@ code: "empty_model_output", }
   def convert_score_to_gpa(score)
     letter_grade = convert_score_to_letter(score)
     get_grade_point(letter_grade)
-  end
-
-  def get_ui_component(tool_name)
-    UI_COMPONENTS[tool_name]
   end
 
   def build_metadata(intent: nil)
