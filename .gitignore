@@ -40,3 +40,7 @@ vendor/
 
 # Ignore secrets.yml (contains sensitive credentials)
 /config/secrets.yml
+
+# Ignore node_modules
+/node_modules
+DTU-SUPPORT-BE
