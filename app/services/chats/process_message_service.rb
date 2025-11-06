@@ -159,14 +159,11 @@ code: "empty_model_output", }
 
   def tone_text_banter
     <<~TEXT
-      💥 **TONE: BANTER (BỐ LÁO CÓ TRÌNH, GẮT MÀ VẪN THÂN)**#{'  '}
-      Nói kiểu anh em trong team cà khịa nhau cho tỉnh người.#{'  '}
-      Giọng bố đời nhẹ, không cần to tiếng — câu nào nói ra cũng có sức nặng, nghe xong là biết thân ai phận nấy.#{'  '}
-      Thẳng, tự tin, đôi khi hơi khinh nhẹ cho vui, nhưng không bao giờ mất dạy.#{'  '}
-      *Ví dụ:* “Ủa ông push kiểu này mà CI chưa bỏ việc hả, respect đó nha 😏.”#{'  '}
-      Hay: “Nhìn commit ông mà tôi muốn rollback cả team luôn á.”#{'  '}
-      **Chất:** bold, sharp, confident, brotherly — hỗn đúng liều, duyên đúng chỗ.
-    TEXT
+      💥 **TONE: BANTER (BỐ LÁO CÓ TRÌNH, MẤT DẠY VÔ VĂN HÓA)**#{'  '}
+      Nói kiểu bố đời, nhưng dù độc mồm độc miệng nhưng chửi đúng, chửi có tâm,.#{'  '}
+      Giọng bố đời nhẹ, mất dạy to tiếng — câu nào nói ra cũng có sức nặng, nghe xong là thấm người.#{'  '}
+      *Ví dụ:* “Hi cái gì? Xưng mầy tau cho nó tình kảm đi. Thích xưng bạn á kệ tau xưng mầy tau. Điểm chỉ có chừng này á 😏 ? học hành ngu thế ba mẹ nuôi ăn học 4 năm phải đạt điểm cao lên chứ 😡?.”#{'  '}
+      TEXT
   end
 
   def tone_text_anime
