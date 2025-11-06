@@ -40,7 +40,7 @@ Xây chatbot AI có thể:
 │ 6. Trả tool_result về Gemini│
 │ 7. Nhận final response     │
 │ 8. Trả về FE với format:   │
-│    { content, toolResult? }│
+│    { content, toolResult? } (toolResult.uiHtml)│
 └──────────────┬────────────┘
                │
                ▼
@@ -227,33 +227,51 @@ Response:
   - canPass (boolean): Có thể qua môn không (nếu đạt điểm tối đa)
 ```
 
-#### 2. Response Format từ BE
+#### 2. Response Format từ BE (FE chỉ render, không mapping UI)
 
 ```typescript
 interface ChatResponse {
-  content: string  // Text response từ Gemini
+  content: string
   toolResult?: {
-    toolName: string  // "calculateTargetGpa" | "calculateSimulationGpa" | etc.
-    data: Record<string, unknown>  // Tool result data
-    uiComponent?: string  // Optional: FE component name để render rich UI
+    toolName: string
+    uiHtml?: string              // BE trả Tailwind HTML, FE render trực tiếp (nếu có)
+    data?: Record<string, unknown> // Dữ liệu thô (tùy chọn) để FE có thể kiểm thử/log
   }
   metadata?: {
     messageId: string
     timestamp: string
-    intent?: string  // "calculation" | "question" | "rag"
+    intent?: string
+    uiHints?: Record<string, unknown>
   }
 }
 ```
 
-#### 3. Quy ước
+#### 3. Quy ước (FE chỉ render theo BE, không tự mapping)
 
-- **BE**: Nhận `tool_call` từ Gemini → thực thi tool → trả `tool_result` về Gemini → nhận final response → trả về FE
-- **FE**: Nhận response → hiển thị text → render rich UI component (nếu có `toolResult.uiComponent`)
-- **Contract**: BE/FE cùng hiểu tool definitions và response format
+- **BE**: Nhận `tool_call` từ Gemini → thực thi tool → trả `tool_result` về Gemini → nhận final response → trả về FE.
+- **FE**: Nhận response → hiển thị `content` →
+  - Nếu có `toolResult.uiHtml`: render trực tiếp Tailwind HTML do BE trả về.
+  - Nếu không có `uiHtml`: chỉ hiển thị text `content` (không tự map component).
+  FE không tự chuyển đổi/mapping dữ liệu UI (màu, nhãn, i18n, icon...).
+- **I18n & UI-ready**: Text hiển thị (nhãn, badge text, tone label, v.v.) phải do BE/AI trả về ở dạng hiển thị trực tiếp; FE không dịch key.
+- **Contract**: BE/FE cùng hiểu tool definitions, `uiComponent` và schema `toolResult.data` tương ứng.
 
 **Deliverable**:
 - ✅ File `tools.md` chứa contract các hàm (để FE/BE & prompt dùng chung)
-- ✅ Response format specification
+- ✅ Response format specification (toolResult.uiHtml theo Tailwind)
+
+#### 4. Phân công BE vs FE
+
+- BE:
+  - Nhận messages, gọi Gemini, parse tool_call.
+  - Thực thi tool, dựng `uiHtml` (Tailwind), trả `toolResult.uiHtml` + `content`.
+  - Bảo đảm HTML an toàn: không script, chỉ class Tailwind.
+  - Gắn `metadata` đầy đủ (`messageId`, `timestamp`, `intent`).
+- FE:
+  - Gửi `POST /api/chat` (kèm `tone` qua query nếu có).
+  - Render `data.content` dưới dạng text.
+  - Nếu có `data.toolResult.uiHtml`: render trực tiếp HTML.
+  - Không tự map dữ liệu sang component FE.
 
 **Gợi ý làm nhanh:**
 - Viết tool definitions dạng markdown hoặc JSON
@@ -967,6 +985,8 @@ POST /api/chat
         }
       },
       "uiComponent": "GpaResultCard"
+      // FE render component này, truyền đúng `data` như trên.
+      // Mọi giá trị hiển thị phải UI-ready từ BE/AI.
     },
     "metadata": {
       "messageId": "msg-124",
@@ -976,6 +996,31 @@ POST /api/chat
   }
 }
 ```
+
+#### Success Response (With uiHtml)
+
+```json
+{
+  "data": {
+    "content": "Dưới đây là kết quả tính toán của bạn.",
+    "toolResult": {
+      "toolName": "calculateTargetGpa",
+      "uiHtml": "<div class=\"rounded-xl border border-border/20 bg-card text-card-foreground p-4\"><div class=\"text-sm text-muted-foreground\">GPA tối đa:</div><div class=\"text-2xl font-bold text-primary\">3.52</div><div class=\"mt-2 inline-flex items-center gap-2 px-2.5 py-1 rounded-full text-xs font-semibold border bg-primary/10 text-primary border-primary/20\">Giỏi</div></div>"
+    },
+    "metadata": {
+      "messageId": "msg-124",
+      "timestamp": "2024-01-15T10:31:00Z",
+      "intent": "calculation"
+    }
+  }
+}
+```
+
+Lưu ý khi dùng `uiHtml`:
+- BE phải dùng Tailwind classes đã có trong FE (token màu semantic: primary, accent, muted, destructive...).
+- Không chèn script/event handler. Chỉ HTML + class utility.
+- FE render trong vùng sandbox container với style kế thừa theme.
+- Nếu cần action, dùng link/button với data-attributes để FE bắt sự kiện cấp cao (tùy chọn).
 
 #### Error Response
 

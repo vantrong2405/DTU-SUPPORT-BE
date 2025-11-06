@@ -67,7 +67,6 @@ class EnvValidator
   end
 end
 
-# Execute validation after Rails has initialized
 Rails.application.config.after_initialize do
   EnvValidator.new.validate!
 end
