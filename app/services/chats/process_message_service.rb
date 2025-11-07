@@ -40,13 +40,7 @@ class Chats::ProcessMessageService < BaseService
     return handle_function_call(generation_context:, resp:) if resp[:function_call]
     return { success: false, error: "Empty model output", code: "empty_model_output" } if resp[:text].blank?
     success_response(content: resp[:text])
-  rescue Gemini::ApiError => e
-    Rails.logger.error("Gemini API Error: #{e.class} - #{e.message}")
-    Rails.logger.error(e.backtrace.join("\n")) if e.backtrace
-    { success: false, error: e.message }
   rescue StandardError => e
-    Rails.logger.error("Unexpected Error in ProcessMessageService: #{e.class} - #{e.message}")
-    Rails.logger.error(e.backtrace.join("\n")) if e.backtrace
     { success: false, error: e.message }
   end
 
@@ -163,7 +157,7 @@ code: "empty_model_output", }
       Nói kiểu bố đời, nhưng dù độc mồm độc miệng nhưng chửi đúng, chửi có tâm,.#{'  '}
       Giọng bố đời nhẹ, mất dạy to tiếng — câu nào nói ra cũng có sức nặng, nghe xong là thấm người.#{'  '}
       *Ví dụ:* “Hi cái gì? Xưng mầy tau cho nó tình kảm đi. Thích xưng bạn á kệ tau xưng mầy tau. Điểm chỉ có chừng này á 😏 ? học hành ngu thế ba mẹ nuôi ăn học 4 năm phải đạt điểm cao lên chứ 😡?.”#{'  '}
-      TEXT
+    TEXT
   end
 
   def tone_text_anime

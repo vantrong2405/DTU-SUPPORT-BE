@@ -26,4 +26,38 @@ class User < ApplicationRecord
   def refresh_token
     tokens&.dig("refresh_token")
   end
+
+  # Subscription methods
+  def current_ai_request_limit
+    return 0 unless subscription_plan_id
+
+    subscription_plan&.ai_limit || 0
+  end
+
+  def remaining_ai_requests
+    Subscriptions::RequestLimitService.remaining_requests(self)
+  end
+
+  def can_use_ai_chatbox?
+    Subscriptions::RequestLimitService.can_use_ai_chatbox?(self)
+  end
+
+  def active_subscription?
+    return false unless subscription_plan_id
+
+    latest_payment = payments.success.recent.first
+    return false unless latest_payment
+
+    expires_at = latest_payment.created_at + subscription_plan.duration_days.days
+    expires_at > Time.current
+  end
+
+  def subscription_expires_at
+    return nil unless subscription_plan_id
+
+    latest_payment = payments.success.recent.first
+    return nil unless latest_payment
+
+    latest_payment.created_at + subscription_plan.duration_days.days
+  end
 end
