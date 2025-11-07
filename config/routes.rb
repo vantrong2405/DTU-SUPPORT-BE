@@ -33,7 +33,7 @@ Rails.application.routes.draw do
   # Webhooks routes
   namespace :api do
     namespace :webhooks do
-      post "momo", to: "momo#callback"
+      post "senpay", to: "senpay#callback"
     end
   end
 
