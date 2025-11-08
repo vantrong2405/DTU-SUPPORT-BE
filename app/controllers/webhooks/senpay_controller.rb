@@ -1,8 +1,6 @@
 # frozen_string_literal: true
 
-class ::Webhooks::SenpayController < ApplicationController
-  skip_before_action :verify_authenticity_token
-
+class Webhooks::SenpayController < ApplicationController
   def callback
     result = Payments::ProcessWebhookService.call(webhook_params: webhook_params.to_h)
 

@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-class ::PaymentsController < ApplicationController
+class PaymentsController < ApplicationController
   include Authenticatable
 
   before_action :authenticate_user!, except: []
