@@ -47,22 +47,39 @@ class Payments::CreatePaymentService < BaseService
     @senpay_client = Senpay::Client.new
     senpay_config = Rails.application.config.senpay
 
+    # Validate URLs
+    redirect_url = senpay_config[:redirect_url]
+    webhook_url = senpay_config[:webhook_url]
+
+    Rails.logger.info("SenPay URLs - redirect_url: #{redirect_url}, webhook_url: #{webhook_url}")
+
+    # Warn if URLs are not HTTPS (except localhost for development)
+    if redirect_url.present? && !redirect_url.start_with?("https://") && !redirect_url.start_with?("http://localhost")
+      Rails.logger.warn("SenPay redirect_url should be HTTPS: #{redirect_url}")
+    end
+
+    if webhook_url.present? && !webhook_url.start_with?("https://")
+      Rails.logger.warn("SenPay webhook_url must be HTTPS: #{webhook_url}")
+    end
+
     payment_params = {
       order_amount: @payment.amount.to_i,
       order_invoice_number: @payment.id.to_s,
       order_description: "Subscription: #{@subscription_plan.name}",
-      return_url: senpay_config[:redirect_url],
-      ipn_url: senpay_config[:webhook_url],
+      return_url: redirect_url,
+      ipn_url: webhook_url,
     }
 
+    # BE config tất cả: tạo form data với signature
+    # FE chỉ cần submit form (không cần config gì thêm)
     @senpay_response = @senpay_client.create_payment_request(payment_params)
   end
 
   def update_payment_with_senpay_response
     @payment.update!(
       transaction_data: {
-        form_data: @senpay_response[:form_data],
         checkout_url: @senpay_response[:checkout_url],
+        form_data: @senpay_response[:form_data],
       },
     )
   end

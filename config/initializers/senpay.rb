@@ -18,8 +18,8 @@ Rails.application.config.after_initialize do
   Rails.application.config.senpay = {
     merchant_id:  ENV.fetch("SENPAY_MERCHANT_ID", nil),
     secret_key:   ENV.fetch("SENPAY_SECRET_KEY", nil),
-    api_url:      Rails.application.config.secrets.senpay[:api_url],
-    checkout_url: Rails.application.config.secrets.senpay[:checkout_url],
+    api_url:      ENV.fetch("SENPAY_API_URL", nil) || Rails.application.config.secrets.senpay[:api_url],
+    checkout_url: ENV.fetch("SENPAY_CHECKOUT_URL", nil) || Rails.application.config.secrets.senpay[:checkout_url],
     redirect_url: ENV.fetch("SENPAY_REDIRECT_URL", nil),
     webhook_url:  ENV.fetch("SENPAY_WEBHOOK_URL", nil),
   }
