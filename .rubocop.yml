@@ -1,3 +1,17 @@
+# RuboCop configuration for UI renderers (long HTML strings allowed)
+
+Metrics/MethodLength:
+  Exclude:
+    - 'app/services/chats/ui_renderers/**/*.rb'
+
+Naming/VariableNumber:
+  Exclude:
+    - 'app/services/chats/ui_renderers/**/*.rb'
+
+Layout/LineLength:
+  Exclude:
+    - 'app/services/chats/ui_renderers/**/*.rb'
+
 # rubocop-rails-omakase automatically includes necessary plugins
 # No need to require additional plugins
 
@@ -14,6 +28,7 @@ AllCops:
   <% `git status --ignored --porcelain`.lines.grep(/^!! /).each do |path| %>
     - '<%= path.sub(/^!! /, '').strip.sub(/\/$/, '/**/*') %>'
   <% end %>
+    - 'db/**/*'
     - 'Gemfile.lock'
     - 'db/schema.rb'
   NewCops: enable
@@ -72,3 +87,6 @@ Style/TrailingCommaInArrayLiteral:
   EnforcedStyleForMultiline: consistent_comma
 Style/TrailingCommaInHashLiteral:
   EnforcedStyleForMultiline: consistent_comma
+
+Layout/LineLength:
+  Max: 155

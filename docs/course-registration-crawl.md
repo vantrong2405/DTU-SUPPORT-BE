@@ -157,29 +157,91 @@ https://courses.duytan.edu.vn/Sites/Home_ChuongTrinhDaoTao.aspx?p=home_listcours
 
 | Cột | Kiểu dữ liệu | Constraints | Mô tả |
 |------|--------------|-------------|-------|
-| `id` | bigserial | PRIMARY KEY | ID payment |
-| `user_id` | uuid | FOREIGN KEY (users.id), NOT NULL | ID user |
-| `plan_id` | bigint | FOREIGN KEY (subscription_plans.id), NOT NULL | ID gói |
-| `amount` | numeric(10,2) | NOT NULL | Số tiền thanh toán |
-| `payment_method` | text | NOT NULL | Phương thức (momo, paypal, stripe) |
-| `status` | text | NOT NULL | Trạng thái (pending / success / failed) |
-| `transaction_data` | jsonb | | Thông tin giao dịch chi tiết |
-| `created_at` | timestamptz | DEFAULT now() | Ngày tạo |
-| `expired_at` | timestamptz | | Hạn dùng đến |
+| `id` | bigserial | PRIMARY KEY | ID payment (dùng làm `order_invoice_number` cho SenPay) |
+| `user_id` | bigint | FOREIGN KEY (users.id), NOT NULL | ID user |
+| `subscription_plan_id` | bigint | FOREIGN KEY (subscription_plans.id), NOT NULL | ID gói |
+| `amount` | decimal(10,2) | NOT NULL | Số tiền thanh toán |
+| `payment_method` | text | NOT NULL | Phương thức (senpay, paypal, stripe) |
+| `status` | text | NOT NULL | Trạng thái (pending, success, failed, expired, cancelled) |
+| `transaction_data` | jsonb | | Thông tin giao dịch chi tiết từ payment gateway |
+| `expired_at` | timestamptz | | Hạn dùng đến (payment timeout) |
+| `created_at` | datetime | DEFAULT now() | Ngày tạo |
+| `updated_at` | datetime | DEFAULT now() | Ngày cập nhật |
 
 **Indexes:**
-- `idx_payments_user_id` trên `user_id`
-- `idx_payments_plan_id` trên `plan_id`
-- `idx_payments_status` trên `status`
-- `idx_payments_created_at` trên `created_at` DESC
+- `index_payments_on_user_id` trên `user_id` (foreign key index)
+- `index_payments_on_subscription_plan_id` trên `subscription_plan_id` (foreign key index)
+- `index_payments_on_status` trên `status` (query by status)
+- `index_payments_on_created_at` trên `created_at` DESC (order by created_at)
 
 **Mối quan hệ:**
-- `users` → `payments` (N:1) - FK: `payments.user_id` → `users.id`
-- `subscription_plans` → `payments` (N:1) - FK: `payments.plan_id` → `subscription_plans.id`
+- `users` → `payments` (1:N) - FK: `payments.user_id` → `users.id`
+- `subscription_plans` → `payments` (1:N) - FK: `payments.subscription_plan_id` → `subscription_plans.id`
 
 **Ghi chú:**
 - Lưu lịch sử thanh toán và thời hạn sử dụng
-- `transaction_data` chứa thông tin chi tiết từ payment gateway
+- `transaction_data` (JSONB) chứa thông tin chi tiết từ payment gateway
+
+**Cấu trúc `transaction_data` cho SenPay:**
+
+**1. Khi tạo payment (Payment Creation):**
+```json
+{
+  "form_data": {
+    "merchant": "YOUR_MERCHANT_ID",
+    "order_amount": 100000,
+    "order_invoice_number": "123",
+    "order_description": "Subscription: Pro Plan",
+    "return_url": "https://your-domain.com/payment/return",
+    "ipn_url": "https://your-domain.com/api/webhooks/senpay",
+    "signature": "GENERATED_SIGNATURE"
+  },
+  "checkout_url": "https://pay-sandbox.sepay.vn/v1/checkout/init"
+}
+```
+
+**2. Khi nhận webhook (Webhook Callback):**
+```json
+{
+  "notification_type": "ORDER_PAID",
+  "order": {
+    "order_invoice_number": "123",
+    "order_amount": 100000,
+    "order_status": "CAPTURED"
+  },
+  "transaction": {
+    "id": "transaction_id_123",
+    "gateway": "Vietcombank",
+    "transaction_date": "2025-11-07T10:00:00Z",
+    "amount_in": 100000,
+    "amount_out": 0,
+    "accumulated": 1000000,
+    "code": "ORDER123",
+    "reference_number": "REF123",
+    "transaction_content": "Thanh toan don hang ORDER123",
+    "account_number": "1234567890",
+    "sub_account": null
+  },
+  "form_data": {
+    "merchant": "YOUR_MERCHANT_ID",
+    "order_amount": 100000,
+    "order_invoice_number": "123",
+    "signature": "GENERATED_SIGNATURE"
+  },
+  "checkout_url": "https://pay-sandbox.sepay.vn/v1/checkout/init"
+}
+```
+
+**Các fields quan trọng cho idempotency check:**
+- `transaction.id` - ID giao dịch trên SenPay (dùng để check duplicate)
+- `transaction.code` - Mã thanh toán (nếu SenPay nhận diện được)
+- `transaction.reference_number` - Mã tham chiếu
+- `order.order_invoice_number` - Mã đơn hàng (tương ứng với `payment.id`)
+
+**Idempotency check:**
+- Query bằng JSONB operators: `WHERE transaction_data->'transaction'->>'id' = ?`
+- Hoặc: `WHERE transaction_data->'order'->>'order_invoice_number' = ?`
+- Có thể thêm indexes sau nếu cần performance
 
 ---
 
