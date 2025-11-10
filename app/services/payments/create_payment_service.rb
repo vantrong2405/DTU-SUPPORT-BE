@@ -4,7 +4,7 @@ class Payments::CreatePaymentService < BaseService
   PAYMENT_TIMEOUT_MINUTES = 15
 
   # rubocop:disable Lint/MissingSuper
-  def initialize(user:, subscription_plan_id:, payment_method: "momo")
+  def initialize(user:, subscription_plan_id:, payment_method: "senpay")
     @user = user
     @subscription_plan = SubscriptionPlan.find(subscription_plan_id)
     @payment_method = payment_method
@@ -14,8 +14,8 @@ class Payments::CreatePaymentService < BaseService
   def call
     validate_inputs!
     create_payment
-    create_momo_request
-    update_payment_with_momo_response
+    create_senpay_request
+    update_payment_with_senpay_response
     { success: true, payment: @payment }
   rescue StandardError => e
     Rails.logger.error("Payment creation failed: #{e.class} - #{e.message}")
@@ -29,7 +29,7 @@ class Payments::CreatePaymentService < BaseService
     raise ArgumentError, "User is required" if @user.blank?
     raise ArgumentError, "Subscription plan not found" if @subscription_plan.blank?
     raise ArgumentError, "Subscription plan is not active" unless @subscription_plan.is_active?
-    raise ArgumentError, "Payment method must be momo" unless @payment_method == "momo"
+    raise ArgumentError, "Payment method must be senpay" unless @payment_method == "senpay"
   end
 
   def create_payment
@@ -43,23 +43,43 @@ class Payments::CreatePaymentService < BaseService
     )
   end
 
-  def create_momo_request
-    @momo_client = Momo::Client.new
-    payment_options = { order_id: @payment.id.to_s, amount: @payment.amount.to_i, order_info: "Subscription: #{@subscription_plan.name}",
-redirect_url: ENV.fetch("MOMO_REDIRECT_URL"), ipn_url: ENV.fetch("MOMO_IPN_URL"), extra_data: "", }
-    @momo_response = @momo_client.create_payment_request(payment_options)
-    raise StandardError, @momo_response[:error] unless @momo_response[:success]
+  def create_senpay_request
+    @senpay_client = Senpay::Client.new
+    senpay_config = Rails.application.config.senpay
+
+    # Validate URLs
+    redirect_url = senpay_config[:redirect_url]
+    webhook_url = senpay_config[:webhook_url]
+
+    Rails.logger.info("SenPay URLs - redirect_url: #{redirect_url}, webhook_url: #{webhook_url}")
+
+    # Warn if URLs are not HTTPS (except localhost for development)
+    if redirect_url.present? && !redirect_url.start_with?("https://") && !redirect_url.start_with?("http://localhost")
+      Rails.logger.warn("SenPay redirect_url should be HTTPS: #{redirect_url}")
+    end
+
+    if webhook_url.present? && !webhook_url.start_with?("https://")
+      Rails.logger.warn("SenPay webhook_url must be HTTPS: #{webhook_url}")
+    end
+
+    payment_params = {
+      order_amount: @payment.amount.to_i,
+      order_invoice_number: @payment.id.to_s,
+      order_description: "Subscription: #{@subscription_plan.name}",
+      return_url: redirect_url,
+      ipn_url: webhook_url,
+    }
+
+    # BE config tất cả: tạo form data với signature
+    # FE chỉ cần submit form (không cần config gì thêm)
+    @senpay_response = @senpay_client.create_payment_request(payment_params)
   end
 
-  def update_payment_with_momo_response
+  def update_payment_with_senpay_response
     @payment.update!(
       transaction_data: {
-        request_id:    @momo_response[:request_id],
-        order_id:      @momo_response[:order_id],
-        amount:        @momo_response[:amount],
-        response_time: @momo_response[:response_time],
-        message:       @momo_response[:message],
-        pay_url:       @momo_response[:pay_url],
+        checkout_url: @senpay_response[:checkout_url],
+        form_data: @senpay_response[:form_data],
       },
     )
   end

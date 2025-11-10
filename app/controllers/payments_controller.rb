@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-class ::PaymentsController < ApplicationController
+class PaymentsController < ApplicationController
   include Authenticatable
 
   before_action :authenticate_user!, except: []
@@ -20,7 +20,7 @@ class ::PaymentsController < ApplicationController
     result = Payments::CreatePaymentService.call(
       user:                 current_user,
       subscription_plan_id: payment_params[:subscription_plan_id],
-      payment_method:       payment_params[:payment_method] || "momo",
+      payment_method:       payment_params[:payment_method] || "senpay",
     )
 
     if result[:success]
@@ -60,7 +60,8 @@ class ::PaymentsController < ApplicationController
       amount:            payment.amount.to_f,
       payment_method:    payment.payment_method,
       status:            payment.status,
-      payment_url:       payment.transaction_data&.dig("payUrl"),
+      checkout_url:      payment.transaction_data&.dig("checkout_url"),
+      form_data:         payment.transaction_data&.dig("form_data"),
       expires_at:        payment.expired_at&.iso8601,
       subscription_plan: serialize_subscription_plan(payment),
       timestamps:        serialize_timestamps(payment),

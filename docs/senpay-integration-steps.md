@@ -70,7 +70,7 @@ class AddSenpayFieldsToPayments < ActiveRecord::Migration[8.0]
   def change
     # transaction_data (JSONB) đã có sẵn, chỉ cần đảm bảo structure
     # Có thể thêm index cho idempotency check
-    add_index :payments, "(transaction_data->>'order_invoice_number')", 
+    add_index :payments, "(transaction_data->>'order_invoice_number')",
               name: "idx_payments_order_invoice_number"
   end
 end
@@ -99,7 +99,7 @@ SENPAY_SECRET_KEY=your_secret_key_here
 SENPAY_API_URL=https://pgapi-sandbox.sepay.vn
 SENPAY_CHECKOUT_URL=https://pay-sandbox.sepay.vn/v1/checkout/init
 SENPAY_REDIRECT_URL=http://localhost:3000/payment/return
-SENPAY_WEBHOOK_URL=https://xxxx.ngrok.io/api/webhooks/senpay
+SENPAY_WEBHOOK_URL=https://xxxx.ngrok.io/webhooks/senpay
 ```
 
 **Các bước:**
@@ -397,7 +397,7 @@ end
 
 **Mục đích:** Nhận POST request từ SenPay với thông tin giao dịch
 
-**Endpoint:** `POST /api/webhooks/senpay`
+**Endpoint:** `POST /webhooks/senpay`
 
 **Request từ SenPay:**
 

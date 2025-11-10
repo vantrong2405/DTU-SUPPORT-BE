@@ -21,16 +21,18 @@ class Payments::ProcessWebhookService < BaseService
   private
 
   def verify_signature!
-    @momo_client = Momo::Client.new
-    unless @momo_client.verify_webhook_signature(@webhook_params)
+    @senpay_client = Senpay::Client.new
+    signature = @webhook_params[:signature] || @webhook_params["signature"]
+    unless @senpay_client.verify_webhook_signature(@webhook_params, signature)
       raise StandardError, "Invalid webhook signature"
     end
   end
 
   def find_payment!
-    order_id = @webhook_params[:orderId] || @webhook_params["orderId"]
-    @payment = Payment.find_by(id: order_id)
-    raise StandardError, "Payment not found: #{order_id}" if @payment.blank?
+    order_invoice_number = @webhook_params.dig(:order, :order_invoice_number) ||
+                           @webhook_params.dig("order", "order_invoice_number")
+    @payment = Payment.find_by(id: order_invoice_number)
+    raise StandardError, "Payment not found: #{order_invoice_number}" if @payment.blank?
   end
 
   def check_already_processed!
@@ -53,13 +55,29 @@ class Payments::ProcessWebhookService < BaseService
   end
 
   def extract_transaction_data
+    order_data = @webhook_params[:order] || @webhook_params["order"] || {}
+    transaction_data = @webhook_params[:transaction] || @webhook_params["transaction"] || {}
+
     {
-      trans_id:      get_param(:transId),
-      result_code:   get_param(:resultCode),
-      message:       get_param(:message),
-      pay_type:      get_param(:payType),
-      response_time: get_param(:responseTime),
-      extra_data:    get_param(:extraData),
+      notification_type: get_param(:notification_type),
+      order: {
+        order_invoice_number: order_data[:order_invoice_number] || order_data["order_invoice_number"],
+        order_amount: order_data[:order_amount] || order_data["order_amount"],
+        order_status: order_data[:order_status] || order_data["order_status"],
+      },
+      transaction: {
+        id: transaction_data[:id] || transaction_data["id"],
+        gateway: transaction_data[:gateway] || transaction_data["gateway"],
+        transaction_date: transaction_data[:transaction_date] || transaction_data["transaction_date"],
+        amount_in: transaction_data[:amount_in] || transaction_data["amount_in"],
+        amount_out: transaction_data[:amount_out] || transaction_data["amount_out"],
+        accumulated: transaction_data[:accumulated] || transaction_data["accumulated"],
+        code: transaction_data[:code] || transaction_data["code"],
+        reference_number: transaction_data[:reference_number] || transaction_data["reference_number"],
+        transaction_content: transaction_data[:transaction_content] || transaction_data["transaction_content"],
+        account_number: transaction_data[:account_number] || transaction_data["account_number"],
+        sub_account: transaction_data[:sub_account] || transaction_data["sub_account"],
+      },
     }
   end
 
@@ -68,8 +86,8 @@ class Payments::ProcessWebhookService < BaseService
   end
 
   def payment_success?
-    result_code = get_param(:resultCode)
-    result_code.to_i == 0
+    notification_type = get_param(:notification_type)
+    notification_type == "ORDER_PAID"
   end
 
   def activate_subscription!

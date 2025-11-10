@@ -25,18 +25,11 @@ Rails.application.routes.draw do
 
   post "api/chat", to: "chats#create"
 
-  # Payments routes
-  namespace :api do
-    resources :payments, only: %i[index show create update destroy]
-  end
+  get "subscription-plans", to: "subscription_plans#index"
 
-  # Webhooks routes
-  namespace :api do
-    namespace :webhooks do
-      post "momo", to: "momo#callback"
-    end
-  end
+  resources :payments, only: %i[index show create update destroy]
 
-  # Defines the root path route ("/")
-  # root "posts#index"
+  namespace :webhooks do
+    post "senpay", to: "senpay#callback"
+  end
 end
