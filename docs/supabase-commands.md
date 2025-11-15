@@ -23,7 +23,7 @@ SUPABASE_DB_NAME=postgres
 ### Bước 2: Drop Tables cũ trong Postgres
 
 ```bash
-bin/rails runner "ActiveRecord::Base.connection.execute(\"DROP TABLE IF EXISTS courses, crawl_course_jobs, crawl_course_configs, ai_schedule_results, payments, users, subscription_plans CASCADE;\")"
+bin/rails runner "ActiveRecord::Base.connection.execute(\"DROP TABLE IF EXISTS courses, crawl_course_jobs, crawl_course_configs, ai_schedule_results, users, subscription_plans CASCADE;\")"
 ```
 
 ### Bước 3: Migrate lại vào Postgres

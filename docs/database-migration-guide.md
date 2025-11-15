@@ -79,10 +79,9 @@ Migration files are located in `db/migrate/`:
 1. `subscription_plans` - Subscription plans (Free, Pro, Premium)
 2. `users` - User accounts with authentication
 3. `crawl_course_config` - Crawl configuration
-4. `payments` - Payment history
-5. `ai_schedule_result` - AI schedule results
-6. `crawl_course_job` - Crawl job tracking
-7. `courses` - Course information
+4. `ai_schedule_result` - AI schedule results
+5. `crawl_course_job` - Crawl job tracking
+6. `courses` - Course information
 
 ## Verification
 

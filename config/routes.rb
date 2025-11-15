@@ -26,10 +26,4 @@ Rails.application.routes.draw do
   post "api/chat", to: "chats#create"
 
   get "subscription-plans", to: "subscription_plans#index"
-
-  resources :payments, only: %i[index show create update destroy]
-
-  namespace :webhooks do
-    post "senpay", to: "senpay#callback"
-  end
 end

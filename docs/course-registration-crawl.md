@@ -35,27 +35,27 @@ https://courses.duytan.edu.vn/Sites/Home_ChuongTrinhDaoTao.aspx?p=home_listcours
          │ N:1                │ 1:N               │ 1:N
          │                    │                   │
          ▼                    ▼                   ▼
-┌──────────────────────┐  ┌─────────────────┐  ┌───────────────────────────────┐
-│  subscription_plans   │  │    payments      │  │  crawl_course_config          │
-├──────────────────────┤  ├─────────────────┤  ├───────────────────────────────┤
-│ 🔑 id (PK,           │  │ 🔑 id (PK,       │  │ 🔑 id (PK, bigserial)         │
-│    bigserial)         │  │    bigserial)     │  │    config_name (text)         │
-│    name (text)        │  │ 🔗 user_id (FK → │  │    url (text)                  │
-│    price (numeric)    │  │    users.id)      │  │ 🔗 created_by (FK →           │
-│    duration_days (int)│  │ 🔗 plan_id (FK →  │  │    users.id)                  │
-│    features (jsonb)   │  │    plans.id)       │  │    is_active (boolean)         │
-│    is_active (boolean)│  │    amount         │  │    created_at (timestamptz)    │
-└──────────────────────┘  │      (numeric)     │  │    updated_at (timestamptz)    │
-                          │    payment_method  │  └───────────────────────────────┘
-                          │      (text)        │              │
-                          │    status (text)   │              │ 1:N
-                          │    transaction_    │              │
-                          │    data (jsonb)    │              ▼
-                          │    created_at      │  ┌───────────────────────────────┐
-                          │    expired_at      │  │   crawl_course_job            │
-                          │      (timestamptz)  │  ├───────────────────────────────┤
-                          └─────────────────┘  │ 🔑 id (PK, bigserial)           │
-                                               │ 🔗 crawl_course_config_id (FK)   │
+┌──────────────────────┐  ┌───────────────────────────────┐
+│  subscription_plans   │  │  crawl_course_config          │
+├──────────────────────┤  ├───────────────────────────────┤
+│ 🔑 id (PK,           │  │ 🔑 id (PK, bigserial)         │
+│    bigserial)         │  │    config_name (text)         │
+│    name (text)        │  │    url (text)                  │
+│    price (numeric)    │  │ 🔗 created_by (FK →           │
+│    duration_days (int)│  │    users.id)                  │
+│    features (jsonb)   │  │    is_active (boolean)         │
+│    is_active (boolean)│  │    created_at (timestamptz)    │
+└──────────────────────┘  │    updated_at (timestamptz)    │
+                          └───────────────────────────────┘
+                                               │              │
+                                               │              │ 1:N
+                                               │              │
+                                               │              ▼
+                                               │  ┌───────────────────────────────┐
+                                               │  │   crawl_course_job            │
+                                               │  ├───────────────────────────────┤
+                                               │  │ 🔑 id (PK, bigserial)           │
+                                               │  │ 🔗 crawl_course_config_id (FK)   │
 ┌──────────────────────────────────────────────┐│    status (varchar)              │
 │        ai_schedule_result                     ││    run_result (jsonb)           │
 ├──────────────────────────────────────────────┤│    started_at (timestamptz)      │
@@ -83,8 +83,6 @@ https://courses.duytan.edu.vn/Sites/Home_ChuongTrinhDaoTao.aspx?p=home_listcours
 
 **Mối quan hệ:**
 - `users` → `subscription_plans` (N:1) - FK: `users.plan_id` → `subscription_plans.id`
-- `users` → `payments` (1:N) - FK: `payments.user_id` → `users.id`
-- `subscription_plans` → `payments` (1:N) - FK: `payments.plan_id` → `subscription_plans.id`
 - `users` → `crawl_course_config` (1:N) - FK: `crawl_course_config.created_by` → `users.id`
 - `users` → `ai_schedule_result` (1:N) - FK: `ai_schedule_result.user_id` → `users.id`
 - `crawl_course_config` → `crawl_course_job` (1:N) - FK: `crawl_course_job.crawl_course_config_id` → `crawl_course_config.id`
@@ -114,7 +112,6 @@ https://courses.duytan.edu.vn/Sites/Home_ChuongTrinhDaoTao.aspx?p=home_listcours
 
 **Mối quan hệ:**
 - `users` → `subscription_plans` (N:1) - FK: `users.plan_id` → `subscription_plans.id`
-- `users` → `payments` (1:N) - FK: `payments.user_id` → `users.id`
 - `users` → `crawl_course_config` (1:N) - FK: `crawl_course_config.created_by` → `users.id`
 - `users` → `ai_schedule_result` (1:N) - FK: `ai_schedule_result.user_id` → `users.id`
 
@@ -143,7 +140,6 @@ https://courses.duytan.edu.vn/Sites/Home_ChuongTrinhDaoTao.aspx?p=home_listcours
 
 **Mối quan hệ:**
 - `subscription_plans` → `users` (1:N) - FK: `users.plan_id` → `subscription_plans.id`
-- `subscription_plans` → `payments` (1:N) - FK: `payments.plan_id` → `subscription_plans.id`
 
 **Ghi chú:**
 - Quản lý các gói subscription với features và giá cả
@@ -151,99 +147,6 @@ https://courses.duytan.edu.vn/Sites/Home_ChuongTrinhDaoTao.aspx?p=home_listcours
 
 ---
 
-### 🔹 Bảng `payments`
-
-**Mục đích:** Lưu lịch sử thanh toán và subscription
-
-| Cột | Kiểu dữ liệu | Constraints | Mô tả |
-|------|--------------|-------------|-------|
-| `id` | bigserial | PRIMARY KEY | ID payment (dùng làm `order_invoice_number` cho SenPay) |
-| `user_id` | bigint | FOREIGN KEY (users.id), NOT NULL | ID user |
-| `subscription_plan_id` | bigint | FOREIGN KEY (subscription_plans.id), NOT NULL | ID gói |
-| `amount` | decimal(10,2) | NOT NULL | Số tiền thanh toán |
-| `payment_method` | text | NOT NULL | Phương thức (senpay, paypal, stripe) |
-| `status` | text | NOT NULL | Trạng thái (pending, success, failed, expired, cancelled) |
-| `transaction_data` | jsonb | | Thông tin giao dịch chi tiết từ payment gateway |
-| `expired_at` | timestamptz | | Hạn dùng đến (payment timeout) |
-| `created_at` | datetime | DEFAULT now() | Ngày tạo |
-| `updated_at` | datetime | DEFAULT now() | Ngày cập nhật |
-
-**Indexes:**
-- `index_payments_on_user_id` trên `user_id` (foreign key index)
-- `index_payments_on_subscription_plan_id` trên `subscription_plan_id` (foreign key index)
-- `index_payments_on_status` trên `status` (query by status)
-- `index_payments_on_created_at` trên `created_at` DESC (order by created_at)
-
-**Mối quan hệ:**
-- `users` → `payments` (1:N) - FK: `payments.user_id` → `users.id`
-- `subscription_plans` → `payments` (1:N) - FK: `payments.subscription_plan_id` → `subscription_plans.id`
-
-**Ghi chú:**
-- Lưu lịch sử thanh toán và thời hạn sử dụng
-- `transaction_data` (JSONB) chứa thông tin chi tiết từ payment gateway
-
-**Cấu trúc `transaction_data` cho SenPay:**
-
-**1. Khi tạo payment (Payment Creation):**
-```json
-{
-  "form_data": {
-    "merchant": "YOUR_MERCHANT_ID",
-    "order_amount": 100000,
-    "order_invoice_number": "123",
-    "order_description": "Subscription: Pro Plan",
-    "return_url": "https://your-domain.com/payment/return",
-    "ipn_url": "https://your-domain.com/api/webhooks/senpay",
-    "signature": "GENERATED_SIGNATURE"
-  },
-  "checkout_url": "https://pay-sandbox.sepay.vn/v1/checkout/init"
-}
-```
-
-**2. Khi nhận webhook (Webhook Callback):**
-```json
-{
-  "notification_type": "ORDER_PAID",
-  "order": {
-    "order_invoice_number": "123",
-    "order_amount": 100000,
-    "order_status": "CAPTURED"
-  },
-  "transaction": {
-    "id": "transaction_id_123",
-    "gateway": "Vietcombank",
-    "transaction_date": "2025-11-07T10:00:00Z",
-    "amount_in": 100000,
-    "amount_out": 0,
-    "accumulated": 1000000,
-    "code": "ORDER123",
-    "reference_number": "REF123",
-    "transaction_content": "Thanh toan don hang ORDER123",
-    "account_number": "1234567890",
-    "sub_account": null
-  },
-  "form_data": {
-    "merchant": "YOUR_MERCHANT_ID",
-    "order_amount": 100000,
-    "order_invoice_number": "123",
-    "signature": "GENERATED_SIGNATURE"
-  },
-  "checkout_url": "https://pay-sandbox.sepay.vn/v1/checkout/init"
-}
-```
-
-**Các fields quan trọng cho idempotency check:**
-- `transaction.id` - ID giao dịch trên SenPay (dùng để check duplicate)
-- `transaction.code` - Mã thanh toán (nếu SenPay nhận diện được)
-- `transaction.reference_number` - Mã tham chiếu
-- `order.order_invoice_number` - Mã đơn hàng (tương ứng với `payment.id`)
-
-**Idempotency check:**
-- Query bằng JSONB operators: `WHERE transaction_data->'transaction'->>'id' = ?`
-- Hoặc: `WHERE transaction_data->'order'->>'order_invoice_number' = ?`
-- Có thể thêm indexes sau nếu cần performance
-
----
 
 ### 🔹 Bảng `crawl_course_config`
 

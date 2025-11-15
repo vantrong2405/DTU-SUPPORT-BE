@@ -23,7 +23,6 @@ class Subscriptions::RequestLimitService < BaseService
 
   def can_use_ai_chatbox?(user)
     return false unless user.subscription_plan_id
-    return false unless active_subscription?(user)
 
     remaining_requests(user) > 0
   end
@@ -36,27 +35,9 @@ class Subscriptions::RequestLimitService < BaseService
 
   private
 
-  def active_subscription?(user)
-    return false unless user.subscription_plan_id
-
-    latest_payment = user.payments.success.recent.first
-    return false unless latest_payment
-
-    expires_at = latest_payment.created_at + user.subscription_plan.duration_days.days
-    expires_at > Time.current
-  end
-
   def count_used_requests(user)
-    subscription_start = get_subscription_start(user)
-    return 0 unless subscription_start
-
-    user.ai_schedule_results.where("created_at >= ?", subscription_start).count
-  end
-
-  def get_subscription_start(user)
-    latest_payment = user.payments.success.recent.first
-    return nil unless latest_payment
-
-    latest_payment.created_at
+    # Count all requests for user with subscription plan
+    # Reset count based on subscription plan duration if needed
+    user.ai_schedule_results.count
   end
 end

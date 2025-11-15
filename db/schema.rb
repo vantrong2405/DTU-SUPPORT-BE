@@ -78,22 +78,6 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_02_140321) do
     t.index ["status"], name: "index_crawl_course_jobs_on_status"
   end
 
-  create_table "payments", force: :cascade do |t|
-    t.bigint "user_id", null: false
-    t.bigint "subscription_plan_id", null: false
-    t.decimal "amount", precision: 10, scale: 2, null: false
-    t.text "payment_method", null: false
-    t.text "status", null: false
-    t.jsonb "transaction_data"
-    t.timestamptz "expired_at"
-    t.datetime "created_at", null: false
-    t.datetime "updated_at", null: false
-    t.index ["created_at"], name: "index_payments_on_created_at", order: :desc
-    t.index ["status"], name: "index_payments_on_status"
-    t.index ["subscription_plan_id"], name: "index_payments_on_subscription_plan_id"
-    t.index ["user_id"], name: "index_payments_on_user_id"
-  end
-
   create_table "subscription_plans", force: :cascade do |t|
     t.text "name", null: false
     t.decimal "price", precision: 10, scale: 2, null: false
@@ -121,7 +105,5 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_02_140321) do
   add_foreign_key "courses", "crawl_course_configs"
   add_foreign_key "crawl_course_configs", "users"
   add_foreign_key "crawl_course_jobs", "crawl_course_configs"
-  add_foreign_key "payments", "subscription_plans"
-  add_foreign_key "payments", "users"
   add_foreign_key "users", "subscription_plans"
 end

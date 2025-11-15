@@ -2,7 +2,6 @@
 
 class SubscriptionPlan < ApplicationRecord
   has_many :users, dependent: :nullify
-  has_many :payments, dependent: :restrict_with_error
 
   validates :name, presence: true
   validates :price, presence: true, numericality: { greater_than: 0 }
