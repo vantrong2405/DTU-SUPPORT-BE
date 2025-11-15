@@ -1,3 +1,15 @@
 {
-  "nuxt.isNuxtApp": false
+  "yaml.validate": false,
+  "yaml.customTags": [
+    "!ruby/object",
+    "!ruby/class"
+  ],
+  "files.associations": {
+    ".rubocop.yml": "yaml"
+  },
+  "[yaml]": {
+    "editor.defaultFormatter": null
+  },
+  "yaml.schemas": {},
+  "yaml.schemaStore.enable": true
 }

@@ -1,0 +1,10 @@
+extends: default
+
+rules:
+  # Disable implicit key check for ERB templates
+  key-ordering: disable
+  line-length: disable
+
+# Ignore .rubocop.yml since it contains ERB
+ignore: |
+  .rubocop.yml

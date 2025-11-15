@@ -5,10 +5,12 @@ Metrics/MethodLength:
     - 'app/services/chats/ui_renderers/**/*.rb'
 
 Naming/VariableNumber:
+  EnforcedStyle: snake_case
   Exclude:
     - 'app/services/chats/ui_renderers/**/*.rb'
 
 Layout/LineLength:
+  Max: 155
   Exclude:
     - 'app/services/chats/ui_renderers/**/*.rb'
 
@@ -25,12 +27,12 @@ AllCops:
     - 'db/schemas/Schemafile'
     - 'db/schemas/*.schema'
   Exclude:
-  <% `git status --ignored --porcelain`.lines.grep(/^!! /).each do |path| %>
-    - '<%= path.sub(/^!! /, '').strip.sub(/\/$/, '/**/*') %>'
-  <% end %>
     - 'db/**/*'
     - 'Gemfile.lock'
     - 'db/schema.rb'
+<% `git status --ignored --porcelain`.lines.grep(/^!! /).each do |path| -%>
+    - '<%= path.sub(/^!! /, '').strip.sub(/\/$/, '/**/*') %>'
+<% end -%>
   NewCops: enable
 
 Layout/EmptyLineAfterGuardClause:
@@ -57,8 +59,6 @@ Metrics/ModuleLength:
 Naming/MethodParameterName:
   AllowedNames:
     - ad
-Naming/VariableNumber:
-  EnforcedStyle: snake_case
 
 Style/AsciiComments:
   Enabled: false
@@ -87,6 +87,3 @@ Style/TrailingCommaInArrayLiteral:
   EnforcedStyleForMultiline: consistent_comma
 Style/TrailingCommaInHashLiteral:
   EnforcedStyleForMultiline: consistent_comma
-
-Layout/LineLength:
-  Max: 155
