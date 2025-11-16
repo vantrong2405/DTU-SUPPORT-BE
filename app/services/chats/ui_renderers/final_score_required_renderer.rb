@@ -18,18 +18,24 @@ class Chats::UiRenderers::FinalScoreRequiredRenderer < Chats::UiRenderers::BaseR
 
     <<~HTML.strip
       <div class="#{CONTAINER_CLASSES}">
-        <div class="flex items-center gap-2">
-          #{info_icon_svg}
+        <div class="flex items-center gap-2.5 mb-4">
+          <div class="flex-shrink-0 p-1.5 rounded-lg bg-primary/10 ring-1 ring-primary/20">
+            #{info_icon_svg}
+          </div>
           <div class="#{TITLE_CLASSES}">Điểm thi cuối kỳ cần đạt</div>
         </div>
         <div class="#{VALUE_CLASSES}">#{main_value}</div>
-        <div class="mt-3 flex items-center gap-2">#{badge}</div>
-        <div class="mt-3 grid grid-cols-3 gap-3">
+        <div class="mt-4 flex items-center gap-2">#{badge}</div>
+        <div class="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-3">
           #{metric_box('Điểm phần đã có', fmt_gpa(partial, digits: 2))}
           #{metric_box('Trọng số cuối kỳ (%)', safe_text(weight))}
           #{metric_box('Điểm qua môn', fmt_gpa(min_pass, digits: 2))}
         </div>
-        <div class="mt-3 text-xs #{SUBTEXT_CLASSES}">Công thức: (Điểm tối thiểu - Điểm hiện tại) / (Trọng số cuối kỳ / 100)</div>
+        <div class="mt-4 p-3 rounded-lg bg-muted/30 border border-border/30">
+          <div class="text-xs #{SUBTEXT_CLASSES}">
+            <span class="font-semibold">Công thức:</span> (Điểm tối thiểu - Điểm hiện tại) / (Trọng số cuối kỳ / 100)
+          </div>
+        </div>
       </div>
     HTML
   end
@@ -38,9 +44,9 @@ class Chats::UiRenderers::FinalScoreRequiredRenderer < Chats::UiRenderers::BaseR
 
   def metric_box(label, value)
     <<~HTML
-      <div class="rounded-md border border-border/30 bg-muted/40 p-3">
-        <div class="text-[11px] text-muted-foreground">#{label}</div>
-        <div class="text-lg font-semibold">#{value}</div>
+      <div class="rounded-xl border border-border/40 bg-gradient-to-br from-muted/50 to-muted/30 p-4 break-words shadow-sm hover:shadow-md transition-shadow duration-200 ring-1 ring-border/20">
+        <div class="text-[11px] font-medium text-muted-foreground/80 break-words mb-1.5 tracking-wide uppercase">#{label}</div>
+        <div class="text-xl sm:text-2xl font-bold text-foreground break-words">#{value}</div>
       </div>
     HTML
   end
