@@ -44,3 +44,6 @@ vendor/
 # Ignore node_modules
 /node_modules
 DTU-SUPPORT-BE
+
+# Ignore vibe-coder-mcp log files
+vibe-session.log
