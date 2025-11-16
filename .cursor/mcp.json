@@ -26,7 +26,7 @@
       ],
       "env": {
         "OPENROUTER_API_KEY": "${OPENROUTER_API_KEY}",
-        "VIBE_PROJECT_ROOT": "/home/vantrong/Documents/DTU/DTU-SUPPORT-FE",
+        "VIBE_PROJECT_ROOT": "/home/vantrong/Documents/DTU/DTU-SUPPORT-BE",
         "LOG_LEVEL": "info",
         "NODE_ENV": "production"
       }
