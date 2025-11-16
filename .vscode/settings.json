@@ -11,5 +11,6 @@
     "editor.defaultFormatter": null
   },
   "yaml.schemas": {},
-  "yaml.schemaStore.enable": true
+  "yaml.schemaStore.enable": true,
+  "nuxt.isNuxtApp": false
 }
