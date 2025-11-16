@@ -16,6 +16,20 @@
     },
     "supabase": {
       "url": "https://mcp.supabase.com/mcp"
+    },
+    "vibe-coder-mcp": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "vibe-coder-mcp",
+        "--stdio"
+      ],
+      "env": {
+        "OPENROUTER_API_KEY": "${OPENROUTER_API_KEY}",
+        "VIBE_PROJECT_ROOT": "/home/vantrong/Documents/DTU/DTU-SUPPORT-FE",
+        "LOG_LEVEL": "info",
+        "NODE_ENV": "production"
+      }
     }
   }
 }
