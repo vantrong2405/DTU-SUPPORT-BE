@@ -25,6 +25,11 @@ class Auth::SessionStore < BaseService
     @session.delete(cache_key)
   end
 
+  def clear_session
+    remove_tokens
+    @session.delete(:user_id)
+  end
+
   private
 
   def cache_key

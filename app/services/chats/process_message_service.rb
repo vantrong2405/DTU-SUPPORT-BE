@@ -38,7 +38,7 @@ class Chats::ProcessMessageService < BaseService
     generation_context = build_generation_context
     resp = generate(generation_context, function_response: nil)
     return handle_function_call(generation_context:, resp:) if resp[:function_call]
-    return { success: false, error: "Empty model output", code: "empty_model_output" } if resp[:text].blank?
+    return { success: false, error: I18n.t("errors.empty_model_output"), code: "empty_model_output" } if resp[:text].blank?
     success_response(content: resp[:text])
   rescue StandardError => e
     { success: false, error: e.message }
@@ -80,7 +80,7 @@ class Chats::ProcessMessageService < BaseService
     fr = { name: resp[:function_call][:name], function_call: resp[:function_call], response: tool_result }
     final_resp = generate(generation_context, function_response: fr)
     if final_resp[:text].blank?
-      return { success: false, error: "Empty model output after tool execution",
+      return { success: false, error: I18n.t("errors.empty_model_output"),
 code: "empty_model_output", }
     end
 
@@ -211,7 +211,7 @@ code: "empty_model_output", }
     when "calculatePeGpa" then execute_calculate_pe_gpa(tool_args)
     when "calculateRequiredFinalScore" then execute_calculate_required_final_score(tool_args)
     when "calculateFinalScore" then execute_calculate_final_score(tool_args)
-    else { error: "Tool #{tool_name} not implemented yet" }
+    else { error: I18n.t("errors.tool_not_implemented", tool_name: tool_name) }
     end
   end
 
@@ -223,7 +223,7 @@ code: "empty_model_output", }
     target_gpa = args["targetGpa"]&.to_f
 
     total_credits = completed_credits + remaining_credits
-    return { error: "Invalid parameters" } if total_credits.zero?
+    return { error: I18n.t("errors.invalid_parameters") } if total_credits.zero?
 
     max_gpa = ((completed_credits * current_gpa) + (remaining_credits * 4.0)) / total_credits
 
@@ -289,7 +289,7 @@ code: "empty_model_output", }
 
     # Validate tổng trọng số = 100%
     total_weight = components.sum { |c| c["weight"].to_f } + final_exam_weight
-    return { error: "Tổng trọng số phải bằng 100%" } unless (99.9..100.1).cover?(total_weight)
+    return { error: I18n.t("errors.total_weight_must_be_100") } unless (99.9..100.1).cover?(total_weight)
 
     # Tính điểm phần đã có (theo %)
     partial_score = components.sum { |c| c["score"].to_f * c["weight"].to_f / 100.0 }
@@ -325,7 +325,7 @@ code: "empty_model_output", }
 
     # Validate tổng trọng số = 100%
     total_weight = components.sum { |c| c["weight"].to_f } + final_exam_weight
-    return { error: "Tổng trọng số phải bằng 100%" } unless (99.9..100.1).cover?(total_weight)
+    return { error: I18n.t("errors.total_weight_must_be_100") } unless (99.9..100.1).cover?(total_weight)
 
     # Tính điểm phần đã có (theo %)
     partial_score = components.sum { |c| c["score"].to_f * c["weight"].to_f / 100.0 }

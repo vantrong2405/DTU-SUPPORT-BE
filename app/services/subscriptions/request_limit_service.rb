@@ -28,7 +28,7 @@ class Subscriptions::RequestLimitService < BaseService
   end
 
   def consume_request(user)
-    return { success: false, error: "No active subscription" } unless can_use_ai_chatbox?(user)
+    return { success: false, error: I18n.t("errors.no_active_subscription") } unless can_use_ai_chatbox?(user)
 
     { success: true }
   end

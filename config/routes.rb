@@ -14,16 +14,11 @@ Rails.application.routes.draw do
     post "logout", to: "google#logout"
   end
 
-  # post "/logout", to: "sessions#destroy" # moved to oauth/google#logout
-
   resources :users, only: [:show] do
     collection do
       get :me
-      delete :logout
     end
   end
 
   post "api/chat", to: "chats#create"
-
-  get "subscription-plans", to: "subscription_plans#index"
 end

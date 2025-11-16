@@ -4,7 +4,7 @@ class UsersController < ApplicationController
   include Authenticatable
   include Authorizable
 
-  before_action :authenticate_user!, only: %i[me show logout]
+  before_action :authenticate_user!, only: %i[me show]
   before_action -> { authorize_current_user(:read) }, only: [:me]
   before_action -> { load_and_authorize_resource(User, :read, :id) }, only: [:show]
 
@@ -14,13 +14,5 @@ class UsersController < ApplicationController
 
   def show
     render json: UserSerializer.new(@user).serializable_hash, status: :ok
-  end
-
-  def logout
-    Auth::SessionStore.new(session:, user_id: current_user.id).remove_tokens
-    session.delete(:user_id)
-    render_success(data: { message: "Logged out successfully" })
-  rescue StandardError => e
-    render_error(message: e.message, details: "Failed to logout", status: :bad_request)
   end
 end

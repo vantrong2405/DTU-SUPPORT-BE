@@ -2,23 +2,31 @@
 
 class Oauth::GoogleController < ApplicationController
   def redirect
-    render_error(message: "Invalid OAuth redirect", details: "Missing return_url", status: :bad_request) and return if params[:return_url].blank?
+    render_error(message: I18n.t("errors.invalid_oauth_redirect"), details: I18n.t("errors.missing_return_url"), status: :bad_request) and return if params[:return_url].blank?
 
     oauth_url = GoogleOauth::Client.generate_auth_url(base_url: request.base_url, return_url: params[:return_url])
     redirect_to oauth_url, allow_other_host: true
   rescue StandardError => e
-    render_error(message: e.message, details: "Failed to generate OAuth URL", status: :bad_request)
+    render_error(message: e.message, details: I18n.t("errors.failed_to_generate_oauth_url"), status: :bad_request)
   end
 
   def callback
     state = GoogleOauth::Client.decode_state(oauth_callback_params[:state])
-    render_error(message: "OAuth error", details: oauth_callback_params[:error], status: :bad_request) and return if oauth_callback_params[:error].present?
+    render_error(message: I18n.t("errors.oauth_error"), details: oauth_callback_params[:error], status: :bad_request) and return if oauth_callback_params[:error].present?
 
     complete_google_sign_in!(code: oauth_callback_params[:code], redirect_uri: state[:redirect_uri])
 
     redirect_to state[:return_url], allow_other_host: true
   rescue StandardError => e
-    render_error(message: e.message, details: "OAuth callback failed", status: :bad_request)
+    render_error(message: e.message, details: I18n.t("errors.oauth_callback_failed"), status: :bad_request)
+  end
+
+  def logout
+    user_id = session[:user_id]
+    Auth::SessionStore.new(session:, user_id:).clear_session if user_id.present?
+    render_success(data: { message: I18n.t("errors.logged_out_successfully") })
+  rescue StandardError => e
+    render_error(message: e.message, details: I18n.t("errors.failed_to_logout"), status: :bad_request)
   end
 
   private

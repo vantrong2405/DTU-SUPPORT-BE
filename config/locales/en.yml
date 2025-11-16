@@ -1,31 +1,30 @@
-# Files in the config/locales directory are used for internationalization and
-# are automatically loaded by Rails. If you want to use locales other than
-# English, add the necessary files in this directory.
-#
-# To use the locales, use `I18n.t`:
-#
-#     I18n.t "hello"
-#
-# In views, this is aliased to just `t`:
-#
-#     <%= t("hello") %>
-#
-# To use a different locale, set it with `I18n.locale`:
-#
-#     I18n.locale = :es
-#
-# This would use the information in config/locales/es.yml.
-#
-# To learn more about the API, please read the Rails Internationalization guide
-# at https://guides.rubyonrails.org/i18n.html.
-#
-# Be aware that YAML interprets the following case-insensitive strings as
-# booleans: `true`, `false`, `on`, `off`, `yes`, `no`. Therefore, these strings
-# must be quoted to be interpreted as strings. For example:
-#
-#     en:
-#       "yes": yup
-#       enabled: "ON"
-
 en:
-  hello: "Hello world"
+  errors:
+    not_found: "Not found"
+    parameter_missing: "Missing parameter"
+    record_invalid: "Invalid data"
+    forbidden: "Forbidden"
+    unauthorized: "Unauthorized"
+    not_authenticated: "Not authenticated"
+    user_not_found: "User not found"
+    invalid_oauth_redirect: "Invalid OAuth redirect"
+    missing_return_url: "Missing return_url"
+    failed_to_generate_oauth_url: "Failed to generate OAuth URL"
+    oauth_error: "OAuth error"
+    oauth_callback_failed: "OAuth callback failed"
+    failed_to_exchange_tokens: "Failed to exchange authorization code for tokens"
+    failed_to_fetch_user_info: "Failed to fetch user information"
+    failed_to_process_message: "Failed to process message"
+    internal_server_error: "Internal server error"
+    empty_model_output: "Empty model output"
+    tool_not_implemented: "Tool %{tool_name} not implemented yet"
+    logged_out_successfully: "Logged out successfully"
+    failed_to_logout: "Failed to logout"
+    invalid_parameters: "Invalid parameters"
+    total_weight_must_be_100: "Total weight must equal 100%"
+    credit_distributions_empty: "Credit distributions cannot be empty"
+    credit_distributions_sum_zero: "Credit distributions cannot sum to zero"
+    total_credits_zero: "Total credits cannot be zero"
+    no_active_subscription: "No active subscription"
+    no_refresh_token_provided: "No refresh token provided"
+    failed_to_refresh_token: "Failed to refresh token"

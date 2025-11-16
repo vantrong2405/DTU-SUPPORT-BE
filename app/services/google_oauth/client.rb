@@ -24,15 +24,15 @@ class GoogleOauth::Client
   end
 
   def self.refresh_access_token!(refresh_token)
-    raise StandardError, "No refresh token provided" if refresh_token.blank?
+    raise StandardError, I18n.t("errors.no_refresh_token_provided") if refresh_token.blank?
 
     uri = URI(Rails.application.config.secrets.google_oauth[:token_uri])
     params = build_refresh_params(refresh_token:)
     response = faraday_connection.post(uri, params)
     return JSON.parse(response.body) if response.success?
-    raise StandardError, "Failed to refresh token"
+    raise StandardError, I18n.t("errors.failed_to_refresh_token")
   rescue Faraday::Error
-    raise StandardError, "Failed to refresh token"
+    raise StandardError, I18n.t("errors.failed_to_refresh_token")
   end
 
   def self.token_expired?(access_token)
@@ -54,7 +54,7 @@ class GoogleOauth::Client
     end
 
     return JSON.parse(response.body) if response.success?
-    raise StandardError, "Failed to fetch user info"
+    raise StandardError, I18n.t("errors.failed_to_fetch_user_info")
   rescue Faraday::Error
     nil
   end

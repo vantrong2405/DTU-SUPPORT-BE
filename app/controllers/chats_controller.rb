@@ -11,12 +11,12 @@ class ChatsController < ApplicationController
     if result[:success]
       render_success(data: { content: result[:content], toolResult: result[:tool_result], metadata: result[:metadata] }.compact)
     else
-      render_error(message: "Failed to process message", details: result[:error], status: :internal_server_error)
+      render_error(message: I18n.t("errors.failed_to_process_message"), details: result[:error], status: :internal_server_error)
     end
   rescue ActionController::ParameterMissing => e
-    render_error(message: "Missing parameter", details: e.message, status: :bad_request)
+    render_error(message: I18n.t("errors.parameter_missing"), details: e.message, status: :bad_request)
   rescue StandardError => e
-    render_error(message: "Internal server error", details: e.message, status: :internal_server_error)
+    render_error(message: I18n.t("errors.internal_server_error"), details: e.message, status: :internal_server_error)
   end
 
   private
